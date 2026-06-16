@@ -43,7 +43,3 @@ body {
 .dark .section-card {
   background: rgba(30, 41, 59, 0.9);
 }
-
-.canva-slot {
-  min-height: clamp(260px, 42vw, 520px);
-}
