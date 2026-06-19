@@ -152,7 +152,7 @@ tpayClient.enableNfcSensor(activity) { tagState ->
         badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
         author: "성현진 엔지니어 (개발 생산성)",
         date: "2026.06.18",
-        readTime: "Git 실무 리포트",
+        readTime: "읽는 시간 10분",
         summary: "AI가 만든 코드 변경을 Git diff, stage, commit, branch, PR 흐름으로 검토하고 설명하는 Git 실무 리포트입니다. VSCode Source Control 기준의 작업 루틴을 한 번에 정리했습니다.",
         tags: ["Git", "VSCode", "AI", "Diff", "DevWorkflow"],
         content: `
@@ -234,7 +234,7 @@ git revert &lt;commit-hash&gt;</code></pre>
         badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
         author: "성현진 엔지니어 (개발 생산성)",
         date: "2026.06.18",
-        readTime: "클라우드 IDE 리포트",
+        readTime: "읽는 시간 15분",
         summary: "AI 코딩 패러다임 전환, LLM의 문맥 처리 방식, 로컬 개발 환경의 구조적 한계, Antigravity IDE형 클라우드 개발 환경 아키텍처를 정리한 기술 리포트입니다.",
         tags: ["AI Coding", "LLM", "Cloud IDE", "Antigravity", "WASM"],
         content: `
@@ -279,7 +279,7 @@ git revert &lt;commit-hash&gt;</code></pre>
         badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
         author: "성현진 엔지니어 (개발 생산성)",
         date: "2026.06.18",
-        readTime: "CLI 코딩 리포트",
+        readTime: "읽는 시간 20분",
         summary: "Codex Plugins, Skills, Hooks, MCP, Image Gen을 중심으로 CLI 기반 AI 코딩 workflow와 Copilot CLI, Claude Code, Codex CLI의 선택 기준을 정리한 기술 리포트입니다.",
         tags: ["Codex", "CLI Coding", "Plugins", "MCP", "Claude Code", "Copilot CLI"],
         content: `
@@ -325,7 +325,7 @@ git revert &lt;commit-hash&gt;</code></pre>
         badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
         author: "성현진 엔지니어 (개발 생산성)",
         date: "2026.06.19",
-        readTime: "AI Git 프롬프트 가이드",
+        readTime: "읽는 시간 8분",
         summary: "git status부터 cherry-pick까지 20개 Git 명령어를 기존 CLI 사용법과 AI 에이전트 프롬프트 작성법으로 나란히 비교한 발표용 슬라이드입니다.",
         tags: ["Git", "AI", "Prompt", "CLI", "Slides"],
         content: `
