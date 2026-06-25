@@ -396,6 +396,135 @@ bool EmvTranProc(BYTE Cmd_code, BYTE *pCmd, UINT nCmdlen, BYTE *pRsp, UINT *nRsp
         `
     },
     {
+        id: 23,
+        title: "Amex Kernel 4: EMV Contactless Book C-4 거래 흐름 완전 분석",
+        category: "security",
+        categoryKo: "보안 및 인증 규격",
+        badgeClass: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900",
+        author: "성현진 연구원 (모듈개발팀)",
+        date: "2026.06.25",
+        readTime: "읽는 시간 18분",
+        summary: "American Express Kernel 4(ExpressPay) 비접촉 거래의 전체 흐름을 처음부터 끝까지 분석합니다. PDOL, GPO, AIP/AFL, ODA, AC 요청·판정, CVM 처리, Outcome 결정 개념과 Visa·Mastercard 커널과의 주요 차이점을 함께 살펴봅니다.",
+        tags: ["Amex", "Kernel4", "ExpressPay", "EMV", "Contactless", "AEIPS", "AC", "ODA"],
+        content: `
+            <h3>Amex Kernel 4란</h3>
+            <p>Kernel 4는 EMVCo Book C-4에 정의된 American Express 비접촉 거래의 L2 로직입니다. American Express의 ExpressPay 및 AEIPS(American Express Integrated Circuit Card Specification) 기반 카드와의 거래에서 리더기가 카드 응답을 해석하고 승인·거절·온라인 요청 여부를 결정하는 핵심 엔진입니다. Visa Kernel 3, Mastercard Kernel 2와 거래 흐름의 큰 틀은 유사하지만 PDOL 구성, CVM 처리, Outcome 결정 방식에서 Amex 고유의 차이가 존재합니다.</p>
+
+            <h3>거래 흐름 전체 개요</h3>
+            <p>Kernel 4 거래는 크게 다음 단계로 구성됩니다.</p>
+            <ol>
+                <li><strong>Entry Point → Kernel 4 선택</strong>: 리더가 카드 AID를 읽고 Amex AID(<code>A0 00 00 00 25 01 07</code> 등)를 확인한 뒤 Kernel 4를 활성화합니다.</li>
+                <li><strong>PDOL 처리 및 GPO</strong>: 카드가 요구하는 단말 데이터를 PDOL로 수집해 <code>GET PROCESSING OPTIONS</code>(GPO) 커맨드를 전송합니다.</li>
+                <li><strong>AIP / AFL 수신</strong>: GPO 응답에서 AIP(지원 기능 플래그)와 AFL(읽을 파일 목록)을 파싱합니다.</li>
+                <li><strong>레코드 읽기(READ RECORD)</strong>: AFL에 명시된 모든 레코드를 순서대로 읽어 카드 데이터를 수집합니다.</li>
+                <li><strong>ODA(오프라인 데이터 인증)</strong>: AIP에 따라 SDA, DDA, CDA 중 하나를 수행합니다.</li>
+                <li><strong>Processing Restrictions</strong>: 애플리케이션 유효기간, 사용 제어(Application Usage Control), 버전 번호 일치 여부를 검사합니다.</li>
+                <li><strong>CVM 처리</strong>: 거래 금액과 단말 CVM 능력을 비교해 서명·온라인 PIN·No CVM 중 CVM을 결정합니다.</li>
+                <li><strong>Terminal Risk Management(TRM)</strong>: 연속 오프라인 카운터, 랜덤 온라인 샘플링, 속도 점검을 수행합니다.</li>
+                <li><strong>Terminal Action Analysis(TAA)</strong>: IAC/TAC와 TVR를 AND 연산하여 ARQC·TC·AAC 중 요청할 AC 유형을 결정합니다.</li>
+                <li><strong>AC 요청 (GENERATE AC)</strong>: 1st GENERATE AC로 카드에 AC를 요청하고, 카드가 ARQC 또는 TC를 반환합니다.</li>
+                <li><strong>온라인 처리 (옵션)</strong>: ARQC 수신 시 호스트에 인가 요청을 보내고 응답(ARPC)으로 2nd GENERATE AC를 처리합니다.</li>
+                <li><strong>Outcome 결정</strong>: Approved / Declined / Online Request / Try Again / End Application 중 최종 결과를 확정합니다.</li>
+            </ol>
+
+            <h3>Amex AID와 커널 식별</h3>
+            <p>American Express는 여러 AID를 운용합니다. Entry Point에서 카드 응답의 AID를 읽어 Kernel 4를 선택합니다.</p>
+            <div class="my-6 p-4 bg-slate-100 dark:bg-slate-900 rounded-xl border-l-4 border-emerald-400">
+                <strong>주요 Amex AID</strong><br>
+                - <code>A0 00 00 00 25 01 07</code>: American Express Credit<br>
+                - <code>A0 00 00 00 25 01 08</code>: American Express Debit<br>
+                - <code>A0 00 00 00 25 09 01</code>: ExpressPay (비접촉 전용)<br>
+                - <code>A0 00 00 00 25 01 07 01</code>: American Express (with RID variant)
+            </div>
+
+            <h3>PDOL과 GPO 처리</h3>
+            <p>Kernel 4의 PDOL은 Amex 특유의 태그를 포함할 수 있습니다. 단말은 PDOL에 명시된 각 태그 값을 채워 GPO 커맨드 데이터로 전송합니다.</p>
+            <pre class="bg-slate-950 p-4 rounded-lg text-slate-300 font-mono text-xs"><code>// GET PROCESSING OPTIONS APDU 구성 예시
+// 주요 PDOL 태그: 9F66(TTQ,4B) 9F02(금액,6B) 9F03(기타금액,6B)
+//               9F1A(국가코드,2B) 95(TVR,5B) 5F2A(통화코드,2B)
+//               9A(거래일,3B) 9C(거래유형,1B) 9F37(랜덤수,4B)
+--> 80 A8 00 00 [Lc] 83 [len] [PDOL data...] 00
+
+// GPO 응답 (AIP + AFL 포함, Format 2)
+&lt;-- 77 xx 82 02 [AIP] 94 xx [AFL] ... 90 00
+
+// AIP 예시: 비접촉 DDA 지원
+AIP = 40 00  (Byte1: bit7=CDA지원, bit4=DDA지원)</code></pre>
+
+            <h3>Amex AIP 주요 비트</h3>
+            <p>AIP는 2바이트 플래그로 카드가 지원하는 기능을 알립니다. Kernel 4에서 핵심적으로 확인하는 비트는 다음과 같습니다.</p>
+            <div class="my-6 p-4 bg-slate-100 dark:bg-slate-900 rounded-xl border-l-4 border-emerald-400">
+                <strong>AIP 주요 플래그 (Byte 1)</strong><br>
+                - Bit 8: CDA 지원 여부<br>
+                - Bit 6: Issuer Authentication 지원<br>
+                - Bit 5: 온라인 PIN 지원<br>
+                - Bit 4: SDA 지원<br>
+                - Bit 3: DDA 지원<br>
+                - Bit 2: Cardholder Verification 지원<br>
+                <br>
+                <strong>Visa·MC와의 차이점</strong><br>
+                Amex AIP Byte 2의 Bit 8은 Mobile 단말 전용 기능 지원 여부를 나타냅니다. Kernel 4는 이 비트를 추가로 검사해 ExpressPay Mobile 거래 경로를 분기합니다.
+            </div>
+
+            <h3>ODA: DDA와 CDA</h3>
+            <p>Amex ExpressPay 카드는 대부분 DDA 또는 CDA를 지원합니다. SDA는 정적 서명이므로 복제 공격에 취약하여 최신 발급 카드에서는 거의 사용하지 않습니다.</p>
+            <ul>
+                <li><strong>DDA(Dynamic Data Authentication)</strong>: INTERNAL AUTHENTICATE 커맨드로 카드가 동적 서명을 생성합니다. 리더는 발급사 공개키 → ICC 공개키 인증서 체인을 검증한 후 동적 서명을 확인합니다.</li>
+                <li><strong>CDA(Combined Data Authentication)</strong>: 1st GENERATE AC 응답에 서명 데이터를 포함시켜 AC와 ODA를 동시에 검증합니다. 검증 실패 시 TVR 비트가 세트되어 TAA 결과에 영향을 줍니다.</li>
+            </ul>
+
+            <h3>CVM 처리와 Amex 특이사항</h3>
+            <p>Kernel 4의 CVM 처리는 카드 CVM 목록(CVM List)과 단말 CVM 능력(Terminal Capabilities), 거래 금액을 조합해 결정합니다. Amex는 일부 고액 거래 구간에서 온라인 PIN을 강제하는 별도 정책을 운용할 수 있으며, 소액 비접촉 거래에서는 No CVM(서명·PIN 생략)이 허용됩니다.</p>
+            <pre class="bg-slate-950 p-4 rounded-lg text-slate-300 font-mono text-xs"><code>// CVM 처리 의사 코드
+for each rule in CVM_List:
+    if (amount_condition_met && terminal_supports_cvm):
+        apply CVM rule
+        if success: record CVM result, break
+        if fail && rule == "if_not_successful_fail": AAC
+// 최종 CVM 결과 → CVR에 반영 → IAD에 포함되어 ARQC 생성 입력값으로 사용</code></pre>
+
+            <h3>TAA: Terminal Action Analysis</h3>
+            <p>TAA는 IAC(Issuer Action Code)와 TAC(Terminal Action Code)를 TVR과 AND 연산하여 AC 유형을 결정합니다. Kernel 4도 Kernel 2와 동일한 구조를 따르며, IAC-Default, IAC-Denial, IAC-Online / TAC-Default, TAC-Denial, TAC-Online 6개 값을 순서대로 검사합니다.</p>
+            <pre class="bg-slate-950 p-4 rounded-lg text-slate-300 font-mono text-xs"><code>// TAA 의사 코드
+if ((TVR &amp; IAC_Denial) || (TVR &amp; TAC_Denial))  → AAC (거절)
+if ((TVR &amp; IAC_Online) || (TVR &amp; TAC_Online))  → ARQC (온라인 요청)
+else                                            → TC (오프라인 승인)</code></pre>
+
+            <h3>GENERATE AC와 AC 유형</h3>
+            <p>1st GENERATE AC의 Reference Control Parameter 상위 2비트로 요청 AC 유형을 지정합니다. 카드는 요청 유형을 따르거나 보안 판단에 따라 단계를 낮출 수 있으며, 응답의 CID(Cryptogram Information Data) 태그로 실제 AC 유형을 확인합니다.</p>
+            <div class="my-6 p-4 bg-slate-100 dark:bg-slate-900 rounded-xl border-l-4 border-emerald-400">
+                <strong>CID 상위 2비트 → AC 유형</strong><br>
+                - <code>00</code>: AAC — 거절<br>
+                - <code>01</code>: TC — 오프라인 승인<br>
+                - <code>10</code>: ARQC — 온라인 인가 요청<br>
+                - <code>11</code>: RFU
+            </div>
+
+            <h3>Visa·Mastercard와의 핵심 차이점</h3>
+            <p>Kernel 4는 다른 커널과 달리 Amex 네트워크 고유의 처리 규칙이 포함됩니다.</p>
+            <ul>
+                <li><strong>IAD(Issuer Application Data) 구조</strong>: Amex IAD는 CVR(Card Verification Results), DAC/ICC Dynamic Number 등 Amex 전용 필드를 포함하며 포맷이 Visa·MC와 다릅니다.</li>
+                <li><strong>ARPC 검증 방식</strong>: 온라인 응답 시 Amex는 자체 ARPC 생성 방식(Method 1/Method 2)을 정의하고 있어 발급사 인증 처리 로직이 별도로 필요합니다.</li>
+                <li><strong>Expresspay Mobile 경로</strong>: HCE(Host Card Emulation) 기반 모바일 결제에서 Kernel 4는 추가 태그(<code>9F6D</code> Amex Enhanced Contactless Reader Capabilities 등)를 처리합니다.</li>
+                <li><strong>Script 처리</strong>: 온라인 응답 후 Issuer Script(태그 71, 72)를 처리하는 흐름은 동일하나, Amex는 Script 오류 시 TVR 세팅 정책이 별도로 정의됩니다.</li>
+            </ul>
+
+            <h3>펌웨어 연결점</h3>
+            <p>실제 구현에서는 Kernel 4 로직이 상태 머신 형태로 각 단계를 처리합니다. 핵심 파일 구조는 다음과 같습니다.</p>
+            <ul>
+                <li><strong>AMEX_KERNEL.C</strong>: Kernel 4 메인 상태 머신. <code>AmexFuncSelectAID</code>, <code>AmexFuncGPO</code>, <code>AmexFuncReadRecord</code>, <code>AmexFuncGenAC</code>가 순서대로 이어집니다.</li>
+                <li><strong>AMEX_ODA.C</strong>: DDA/CDA 서명 검증 및 Amex 공개키 인증서 체인 처리입니다.</li>
+                <li><strong>AMEX_CVM.C</strong>: CVM 목록 파싱 및 단말 CVM 능력과의 매칭 처리입니다.</li>
+                <li><strong>EMV_TAA.C</strong>: IAC/TAC 기반 터미널 액션 분석 (Kernel 2/3와 공유 가능한 공통 모듈).</li>
+            </ul>
+
+            <a href="https://canva.link/2c897tyhpxhk06h" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+                <span>슬라이드 열기</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+        `
+    },
+    {
         id: 22,
         title: "PCI PTS: 결제 단말기 물리·논리 보안 요구사항 완전 분석",
         category: "security",
