@@ -19,6 +19,7 @@
       --mono: "Cascadia Mono", "D2Coding", Consolas, monospace;
       --font: "Noto Sans KR", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
       --scale: 1;
+      --user-scale: 1.12; /* 추가: 폰트(시각적 크기) 조절용 사용자 스케일 */
     }
 
     * {
@@ -47,8 +48,8 @@
     }
 
     .deck-shell {
-      width: calc(1920px * var(--scale));
-      height: calc(1080px * var(--scale));
+      width: calc(1920px * var(--scale) * var(--user-scale));
+      height: calc(1080px * var(--scale) * var(--user-scale));
       position: relative;
     }
 
@@ -57,7 +58,7 @@
       z-index: 30;
       top: 18px;
       left: 50%;
-      width: calc(1920px * var(--scale));
+      width: calc(1920px * var(--scale) * var(--user-scale));
       transform: translateX(-50%);
       display: flex;
       align-items: center;
@@ -147,7 +148,7 @@
       overflow: hidden;
       background: var(--panel);
       box-shadow: 0 24px 70px rgba(17, 24, 39, 0.16);
-      transform: scale(var(--scale));
+      transform: scale(calc(var(--scale) * var(--user-scale)));
       transform-origin: top left;
     }
 

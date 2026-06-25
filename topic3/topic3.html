@@ -1,2286 +1,1033 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI 코딩 패러다임과 차세대 클라우드 개발 환경 — Session 1</title>
+  <meta name="description" content="Google Antigravity IDE의 특징, 사용법, VS Code와의 차이를 설명하는 20분 기술 프레젠테이션">
+  <title>Google Antigravity IDE: 에이전트 중심 개발의 실제</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
-
     :root {
-      --bg-deep: #090d16;
-      --bg-card: #0d1424;
-      --bg-elevated: #111827;
-      --bg-border: #1e2d44;
-      --neon-blue: #38bdf8;
-      --cyan: #06b6d4;
-      --cyan-dim: #0891b2;
-      --accent-green: #34d399;
-      --accent-orange: #fb923c;
-      --accent-red: #f87171;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #475569;
-      --grid-line: rgba(56, 189, 248, 0.06);
-      --font-scale: 1.2;
+      --ink: #f4f7ff;
+      --muted: #aab5ce;
+      --dim: #77839f;
+      --night: #060915;
+      --panel: #0d1325;
+      --panel-2: #111a31;
+      --line: rgba(157, 176, 220, .18);
+      --blue: #68a8ff;
+      --violet: #a888ff;
+      --cyan: #47d7e8;
+      --green: #62d6a7;
+      --amber: #ffc86b;
+      --danger: #ff7f91;
+      --vs: #23a8f2;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html,
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
     body {
-      width: 100%;
-      height: 100%;
-      background: var(--bg-deep);
-      font-family: 'Inter', sans-serif;
-      color: var(--text-primary);
       overflow: hidden;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(91, 96, 246, .18), transparent 27%),
+        radial-gradient(circle at 88% 88%, rgba(43, 174, 220, .12), transparent 30%),
+        #03050c;
+      font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      word-break: keep-all;
     }
 
-    /* ── GRID BACKGROUND ── */
-    body::before {
-      content: '';
-      position: fixed;
+    button, a { font: inherit; }
+    a { color: inherit; }
+
+    .deck {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      width: min(100vw, 177.7778vh);
+      height: min(100vh, 56.25vw);
+      transform: translate(-50%, -50%);
+      overflow: hidden;
+      background: var(--night);
+      box-shadow: 0 2rem 7rem rgba(0, 0, 0, .5);
+      font-size: min(1.1vw, 1.956vh);
+    }
+
+    .deck::before {
+      content: "";
+      position: absolute;
       inset: 0;
-      background-image:
-        linear-gradient(var(--grid-line) 1px, transparent 1px),
-        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-      background-size: 60px 60px;
       pointer-events: none;
+      background-image:
+        linear-gradient(rgba(126, 150, 204, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(126, 150, 204, .035) 1px, transparent 1px);
+      background-size: 4.5em 4.5em;
+      mask-image: linear-gradient(to bottom, black, transparent 88%);
       z-index: 0;
     }
 
-    /* ── SLIDES CONTAINER ── */
-    #slides {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      height: 100%;
+    .ambient {
+      position: absolute;
+      width: 34em;
+      height: 34em;
+      border-radius: 50%;
+      filter: blur(5em);
+      opacity: .13;
+      pointer-events: none;
+      z-index: 0;
     }
+    .ambient.a { top: -20em; right: -10em; background: var(--violet); }
+    .ambient.b { bottom: -24em; left: -8em; background: var(--cyan); }
 
     .slide {
       position: absolute;
       inset: 0;
-      display: flex;
-      flex-direction: column;
-      padding: 52px 64px 44px;
+      z-index: 1;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 1.15em;
+      padding: 3em 3.8em 2.55em;
       opacity: 0;
-      transform: translateX(40px);
-      transition: opacity .38s cubic-bezier(.4, 0, .2, 1), transform .38s cubic-bezier(.4, 0, .2, 1);
+      visibility: hidden;
+      transform: translateX(2.2em) scale(.992);
+      transition: opacity .32s ease, transform .32s ease, visibility .32s;
       pointer-events: none;
     }
-
     .slide.active {
       opacity: 1;
-      transform: translateX(0);
+      visibility: visible;
+      transform: none;
       pointer-events: auto;
     }
 
-    .slide.exit {
-      opacity: 0;
-      transform: translateX(-40px);
-    }
-
-    /* ── NAV BAR ── */
-    #nav {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
+    .slide-head {
       display: flex;
-      align-items: center;
-      gap: 20px;
-      background: rgba(13, 20, 36, .85);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--bg-border);
-      border-radius: 40px;
-      padding: 10px 24px;
-      z-index: 100;
-      font-size: 13px;
-      color: var(--text-secondary);
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 2em;
     }
 
-    #nav button {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--neon-blue);
-      font-size: 16px;
-      line-height: 1;
-      padding: 2px 6px;
-      transition: opacity .2s;
-    }
-
-    #nav button:hover {
-      opacity: .7;
-    }
-
-    #slide-counter {
-      font-variant-numeric: tabular-nums;
-      min-width: 52px;
-      text-align: center;
-    }
-
-    /* ── PROGRESS BAR ── */
-    #progress {
-      position: fixed;
-      top: 0;
-      left: 0;
-      height: 2px;
-      background: linear-gradient(90deg, var(--cyan), var(--neon-blue));
-      transition: width .3s ease;
-      z-index: 200;
-      box-shadow: 0 0 8px var(--cyan);
-    }
-
-    /* ── SPEAKER NOTES ── */
-    #notes-panel {
-      position: fixed;
-      bottom: 70px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      width: min(760px, 90vw);
-      background: rgba(9, 13, 22, .95);
-      border: 1px solid var(--bg-border);
-      border-radius: 12px;
-      padding: 18px 24px;
-      font-size: 14px;
-      line-height: 1.7;
-      color: var(--text-secondary);
-      opacity: 0;
-      transition: opacity .3s, transform .3s;
-      pointer-events: none;
-      z-index: 99;
-      max-height: 140px;
-      overflow-y: auto;
-    }
-
-    #notes-panel.visible {
-      opacity: 1;
-      transform: translateX(-50%) translateY(0);
-      pointer-events: auto;
-    }
-
-    #notes-panel strong {
-      color: var(--neon-blue);
-      font-size: 13px;
-      letter-spacing: .1em;
+    .eyebrow {
+      margin: 0 0 .6em;
+      color: var(--cyan);
+      font-size: .86em;
+      font-weight: 800;
+      letter-spacing: .15em;
       text-transform: uppercase;
-      display: block;
-      margin-bottom: 6px;
     }
 
-    /* ── KEYBOARD HINT ── */
-    #hint {
-      position: fixed;
-      top: 20px;
-      right: 24px;
-      font-size: 13px;
-      color: var(--text-muted);
-      z-index: 100;
-      text-align: right;
-      line-height: 1.8;
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      margin-bottom: .25em;
+      font-size: 4.45em;
+      line-height: .98;
+      letter-spacing: -.055em;
+    }
+    h2 {
+      margin-bottom: 0;
+      font-size: 2.35em;
+      line-height: 1.13;
+      letter-spacing: -.04em;
+    }
+    h3 {
+      margin-bottom: .55em;
+      font-size: 1.18em;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    p { line-height: 1.55; }
+    strong { color: #fff; }
+
+    .accent-text {
+      color: transparent;
+      background: linear-gradient(100deg, #7cc1ff 0%, #a889ff 56%, #61e3df 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
     }
 
-    kbd {
-      background: var(--bg-elevated);
-      border: 1px solid var(--bg-border);
-      border-radius: 4px;
-      padding: 1px 5px;
-      font-size: 11px;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* ═══════════════════════════════════════
-     SHARED COMPONENT STYLES
-  ═══════════════════════════════════════ */
-
-    .tag {
+    .badge {
+      flex: none;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 600;
-      letter-spacing: .12em;
-      text-transform: uppercase;
-      color: var(--cyan);
-      border: 1px solid rgba(6, 182, 212, .3);
-      background: rgba(6, 182, 212, .07);
-      padding: 4px 12px;
-      border-radius: 20px;
-      margin-bottom: 18px;
+      gap: .55em;
+      padding: .55em .9em;
+      color: #cbd6f5;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(10, 17, 34, .72);
+      font-size: .76em;
+      font-weight: 700;
+      white-space: nowrap;
     }
 
-    .tag-orange {
-      color: var(--accent-orange);
-      border-color: rgba(251, 146, 60, .3);
-      background: rgba(251, 146, 60, .07);
+    .content { min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 2.2em; align-items: center; min-height: 0; }
+    .split.wide-left { grid-template-columns: 1.1fr .9fr; }
+    .split.wide-right { grid-template-columns: .87fr 1.13fr; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1em; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: .95em; }
+
+    .lead {
+      max-width: 39em;
+      margin: .8em 0 0;
+      color: #c3cce0;
+      font-size: 1.18em;
+      line-height: 1.55;
     }
 
-    .tag-red {
-      color: var(--accent-red);
-      border-color: rgba(248, 113, 113, .3);
-      background: rgba(248, 113, 113, .07);
-    }
-
-    .tag-green {
-      color: var(--accent-green);
-      border-color: rgba(52, 211, 153, .3);
-      background: rgba(52, 211, 153, .07);
-    }
-
-    .slide-title {
-      font-size: clamp(26px, 3.2vw, 42px);
-      font-weight: 800;
-      line-height: 1.18;
-      letter-spacing: -.02em;
-      color: var(--text-primary);
-      margin-bottom: 10px;
-    }
-
-    .slide-title span {
-      color: var(--neon-blue);
-    }
-
-    .slide-sub {
-      font-size: calc(20px * var(--font-scale));
-      color: var(--text-secondary);
-      line-height: 1.6;
-      font-weight: 400;
-    }
-
-    .divider {
-      width: 48px;
-      height: 3px;
-      background: linear-gradient(90deg, var(--cyan), var(--neon-blue));
-      border-radius: 2px;
-      margin: 16px 0;
-      box-shadow: 0 0 8px var(--cyan);
-    }
-
-    /* Card */
     .card {
-      background: var(--bg-card);
-      border: 1px solid var(--bg-border);
-      border-radius: 12px;
-      padding: 20px 24px;
+      padding: 1.3em 1.4em;
+      border: 1px solid var(--line);
+      border-radius: 1.15em;
+      background: linear-gradient(145deg, rgba(20, 30, 56, .88), rgba(10, 15, 29, .82));
+      box-shadow: inset 0 1px rgba(255, 255, 255, .025);
     }
+    .card p, .card li { color: var(--muted); font-size: .88em; }
+    .card p:last-child { margin-bottom: 0; }
+    .card.kicker { border-top: .22em solid var(--blue); }
+    .card.violet { border-top: .22em solid var(--violet); }
+    .card.green { border-top: .22em solid var(--green); }
+    .card.amber { border-top: .22em solid var(--amber); }
 
-    .card-title {
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 10px;
-    }
-
-    /* Grid layouts */
-    .two-col {
+    .icon {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
-
-    .three-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-    }
-
-    /* Stat number */
-    .stat-num {
-      font-size: clamp(calc(60px * var(--font-scale)), 8vw, calc(100px * var(--font-scale)));
+      place-items: center;
+      width: 2.15em;
+      height: 2.15em;
+      margin-bottom: .9em;
+      border: 1px solid rgba(116, 167, 255, .28);
+      border-radius: .7em;
+      color: var(--blue);
+      background: rgba(76, 126, 234, .1);
+      font-size: 1.15em;
       font-weight: 900;
-      line-height: 1;
-      letter-spacing: -.04em;
-      background: linear-gradient(135deg, var(--neon-blue), var(--cyan));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
     }
 
-    .stat-label {
-      font-size: calc(20px * var(--font-scale));
-      color: var(--text-secondary);
-      margin-top: 6px;
-      font-weight: 500;
-    }
-
-    /* Code block */
-    .code-block {
-      background: #050810;
-      border: 1px solid var(--bg-border);
-      border-radius: 8px;
-      padding: 16px 20px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: calc(20px * var(--font-scale));
-      line-height: 1.7;
-    }
-
-    .code-block .kw {
-      color: #c792ea;
-    }
-
-    .code-block .str {
-      color: #c3e88d;
-    }
-
-    .code-block .fn {
-      color: #82aaff;
-    }
-
-    .code-block .cm {
-      color: #546e7a;
-      font-style: italic;
-    }
-
-    .code-block .num {
-      color: #f78c6c;
-    }
-
-    .code-block .at {
-      color: var(--neon-blue);
-    }
-
-    /* Flow arrow */
-    .flow-arrow {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--cyan);
-      font-size: calc(22px * var(--font-scale));
-      flex-shrink: 0;
-    }
-
-    /* Part header */
-    .part-badge {
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 700;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      color: var(--bg-deep);
-      background: linear-gradient(90deg, var(--cyan), var(--neon-blue));
-      padding: 4px 16px;
-      border-radius: 20px;
-      display: inline-block;
-      margin-bottom: 24px;
-    }
-
-    /* Icon circle */
-    .icon-circle {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: calc(22px * var(--font-scale));
-      flex-shrink: 0;
-      background: rgba(56, 189, 248, .12);
-      border: 1px solid rgba(56, 189, 248, .25);
-    }
-
-    .icon-circle.orange {
-      background: rgba(251, 146, 60, .12);
-      border-color: rgba(251, 146, 60, .25);
-    }
-
-    .icon-circle.red {
-      background: rgba(248, 113, 113, .12);
-      border-color: rgba(248, 113, 113, .25);
-    }
-
-    .icon-circle.green {
-      background: rgba(52, 211, 153, .12);
-      border-color: rgba(52, 211, 153, .25);
-    }
-
-    /* Arch box */
-    .arch-box {
-      border: 1px solid var(--bg-border);
-      border-radius: 10px;
-      padding: 14px 18px;
-      background: rgba(17, 24, 39, .6);
+    .clean-list { margin: 0; padding: 0; list-style: none; }
+    .clean-list li {
       position: relative;
+      margin: 0 0 .82em;
+      padding-left: 1.45em;
+      color: #bec8de;
+      font-size: 1em;
+      line-height: 1.48;
     }
-
-    .arch-box::before {
-      content: attr(data-label);
+    .clean-list li::before {
+      content: "";
       position: absolute;
-      top: -10px;
-      left: 14px;
-      background: var(--bg-deep);
-      padding: 0 8px;
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 700;
-      letter-spacing: .1em;
-      text-transform: uppercase;
-      color: var(--cyan);
-    }
-
-    /* Warning box */
-    .warn-box {
-      border: 1px solid rgba(248, 113, 113, .35);
-      background: rgba(248, 113, 113, .06);
-      border-radius: 10px;
-      padding: 16px 20px;
-    }
-
-    /* Timeline step */
-    .step {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-    }
-
-    .step-num {
-      width: 32px;
-      height: 32px;
+      left: 0;
+      top: .53em;
+      width: .48em;
+      height: .48em;
       border-radius: 50%;
-      background: linear-gradient(135deg, var(--cyan), var(--neon-blue));
+      background: linear-gradient(135deg, var(--blue), var(--violet));
+      box-shadow: 0 0 1em rgba(104, 168, 255, .45);
+    }
+
+    .label {
+      display: inline-block;
+      margin-bottom: .85em;
+      color: var(--dim);
+      font-size: .72em;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .concept {
+      position: relative;
+      min-height: 25em;
+      padding: 1.6em;
+      border: 1px solid var(--line);
+      border-radius: 1.5em;
+      background:
+        radial-gradient(circle at center, rgba(104, 126, 255, .13), transparent 38%),
+        rgba(8, 13, 27, .68);
+    }
+    .concept::after {
+      content: "개념도";
+      position: absolute;
+      top: 1.1em;
+      right: 1.2em;
+      padding: .35em .65em;
+      color: var(--dim);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: .64em;
+      font-weight: 800;
+      letter-spacing: .1em;
+    }
+
+    .orbit { position: absolute; inset: 3.5em 4em; }
+    .orbit::before, .orbit::after {
+      content: "";
+      position: absolute;
+      inset: 3.4em;
+      border: 1px solid rgba(123, 149, 221, .19);
+      border-radius: 50%;
+    }
+    .orbit::after { inset: 1em; border-style: dashed; opacity: .6; }
+    .hub {
+      position: absolute;
+      inset: 50% auto auto 50%;
+      z-index: 2;
+      width: 9.2em;
+      padding: 1.15em .8em;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      border: 1px solid rgba(168, 136, 255, .5);
+      border-radius: 1em;
+      background: linear-gradient(135deg, rgba(70, 91, 187, .92), rgba(91, 54, 156, .92));
+      box-shadow: 0 0 3em rgba(126, 95, 255, .25);
+      font-weight: 900;
+    }
+    .satellite {
+      position: absolute;
+      z-index: 2;
+      min-width: 7.4em;
+      padding: .8em 1em;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: .85em;
+      background: #111a30;
+      color: #c8d5f1;
+      font-size: .82em;
+      font-weight: 800;
+    }
+    .satellite.editor { top: 0; left: 50%; transform: translateX(-50%); }
+    .satellite.terminal { bottom: 0; left: 4%; }
+    .satellite.browser { bottom: 0; right: 4%; }
+
+    .formula {
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 700;
-      color: var(--bg-deep);
-      flex-shrink: 0;
+      gap: .65em;
+      margin-top: 1.5em;
     }
-
-    .step-body {
-      padding-top: 4px;
+    .formula .unit {
+      flex: 1;
+      padding: 1em .75em;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: .9em;
+      background: rgba(16, 25, 47, .86);
+      font-size: .84em;
+      font-weight: 800;
     }
+    .formula .plus { align-self: center; color: var(--dim); font-weight: 900; }
 
-    .step-body h4 {
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 700;
-      color: var(--text-primary);
-      margin-bottom: 3px;
+    .manager-board {
+      display: grid;
+      grid-template-columns: .75fr 1.25fr;
+      min-height: 24em;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 1.4em;
+      background: rgba(7, 11, 24, .84);
     }
+    .manager-side { padding: 1.35em; border-right: 1px solid var(--line); background: rgba(17, 25, 47, .75); }
+    .manager-side .mini { margin-bottom: .7em; padding: .75em; border-radius: .65em; color: #aab8d4; background: rgba(255,255,255,.035); font-size: .72em; }
+    .manager-main { display: grid; gap: .9em; padding: 1.35em; }
+    .agent-row { display: grid; grid-template-columns: 2.2em 1fr auto; gap: .8em; align-items: center; padding: .85em 1em; border: 1px solid var(--line); border-radius: .8em; background: var(--panel); }
+    .agent-row .dot { width: 2.2em; height: 2.2em; display: grid; place-items: center; border-radius: .65em; background: rgba(104,168,255,.13); color: var(--blue); font-weight: 900; }
+    .agent-row b { font-size: .84em; }
+    .agent-row small { display: block; margin-top: .25em; color: var(--dim); font-size: .66em; }
+    .status { padding: .35em .65em; border-radius: 999px; color: var(--green); background: rgba(98,214,167,.1); font-size: .62em; font-weight: 800; }
+    .status.wait { color: var(--amber); background: rgba(255,200,107,.1); }
 
-    .step-body p {
-      font-size: calc(20px * var(--font-scale));
-      color: var(--text-secondary);
+    .artifact-flow, .cycle, .timeline {
+      display: flex;
+      align-items: stretch;
+      gap: .72em;
+    }
+    .artifact-flow .step, .cycle .step, .timeline .step {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      padding: 1.15em 1em;
+      border: 1px solid var(--line);
+      border-radius: .9em;
+      background: var(--panel);
+    }
+    .artifact-flow .step:not(:last-child)::after,
+    .timeline .step:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -.72em;
+      z-index: 3;
+      transform: translate(50%, -50%);
+      color: var(--violet);
+      font-weight: 900;
+    }
+    .step .num { color: var(--blue); font-size: .72em; font-weight: 900; }
+    .step b { display: block; margin: .45em 0 .35em; font-size: .86em; }
+    .step small { display: block; color: var(--dim); font-size: .68em; line-height: 1.42; }
+
+    .trust-line {
+      margin-top: 1.45em;
+      padding: 1.15em 1.35em;
+      border-left: .22em solid var(--green);
+      border-radius: .3em .9em .9em .3em;
+      background: rgba(98, 214, 167, .07);
+      color: #cfe8df;
+      font-size: 1.05em;
       line-height: 1.5;
     }
 
-    /* Highlight row */
-    .hl-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-radius: 8px;
-      background: rgba(56, 189, 248, .06);
-      border: 1px solid rgba(56, 189, 248, .14);
+    .browser-window {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 1.2em;
+      background: #0a1020;
+      box-shadow: 0 1.6em 4em rgba(0,0,0,.28);
     }
+    .browser-bar { display: flex; align-items: center; gap: .38em; padding: .8em 1em; border-bottom: 1px solid var(--line); background: #11182b; }
+    .browser-bar i { width: .55em; height: .55em; border-radius: 50%; background: #4a5368; }
+    .browser-bar .address { flex: 1; margin-left: .7em; padding: .45em .8em; border-radius: .5em; color: #7986a0; background: #080c18; font-size: .62em; }
+    .browser-canvas { position: relative; min-height: 18em; padding: 2em; background: linear-gradient(145deg, #101b36, #0b1020); }
+    .browser-canvas .mock-title { width: 62%; height: 1.1em; margin-bottom: 1em; border-radius: 999px; background: linear-gradient(90deg, #4367d8, #6a55c2); }
+    .browser-canvas .mock-line { width: 85%; height: .45em; margin-bottom: .55em; border-radius: 999px; background: #26304a; }
+    .browser-canvas .mock-line.short { width: 55%; }
+    .comment-pin { position: absolute; right: 16%; bottom: 24%; display: grid; place-items: center; width: 2.4em; height: 2.4em; border-radius: 50%; background: var(--amber); color: #251904; font-weight: 1000; box-shadow: 0 0 0 .55em rgba(255,200,107,.12); }
+    .comment-box { position: absolute; right: 5%; bottom: 8%; width: 11em; padding: .8em; border: 1px solid rgba(255,200,107,.35); border-radius: .65em; background: #2b2419; color: #ffe8b9; font-size: .68em; line-height: 1.4; }
 
-    /* vs divider */
-    .vs-badge {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: calc(20px * var(--font-scale));
-      font-weight: 800;
-      letter-spacing: .12em;
-      color: var(--text-muted);
+    .setup-line { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; }
+    .setup-step { position: relative; padding: 1.35em 1.1em; border: 1px solid var(--line); border-radius: 1em; background: var(--panel); }
+    .setup-step:not(:last-child)::after { content: ""; position: absolute; top: 2.25em; left: calc(100% + .1em); width: .8em; border-top: 2px dotted rgba(124, 162, 233, .42); }
+    .setup-step .round { width: 2.1em; height: 2.1em; display: grid; place-items: center; margin-bottom: .8em; border-radius: 50%; color: #07101c; background: linear-gradient(135deg, var(--cyan), var(--blue)); font-weight: 1000; }
+    .setup-step p { margin: 0; color: var(--dim); font-size: .75em; }
+
+    .notice { margin-top: 1.2em; padding: .85em 1em; border: 1px solid rgba(255,200,107,.24); border-radius: .75em; color: #e9d5aa; background: rgba(255,200,107,.065); font-size: .76em; }
+
+    .prompt-card { min-height: 19em; padding: 1.4em; border: 1px solid var(--line); border-radius: 1.2em; background: var(--panel); }
+    .prompt-card.bad { border-top: .25em solid var(--danger); }
+    .prompt-card.good { border-top: .25em solid var(--green); }
+    .prompt-card .prompt { margin-top: 1em; padding: 1em; border-radius: .75em; color: #c8d2e8; background: #070b16; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: .78em; line-height: 1.65; }
+    .prompt-card.bad .prompt { color: #ffc7cf; }
+    .prompt-parts { display: flex; flex-wrap: wrap; gap: .45em; margin-top: 1em; }
+    .prompt-parts span { padding: .35em .58em; border: 1px solid rgba(98,214,167,.2); border-radius: 999px; color: #bfe7d8; background: rgba(98,214,167,.07); font-size: .62em; font-weight: 800; }
+
+    .parallel-card { min-height: 18.5em; }
+    .parallel-card.good { border-color: rgba(98,214,167,.3); }
+    .parallel-card.sequence { border-color: rgba(255,200,107,.3); }
+    .parallel-card ul { margin: .8em 0 0; padding: 0; list-style: none; }
+    .parallel-card li { margin-bottom: .72em; padding: .65em .75em; border-radius: .6em; background: rgba(255,255,255,.035); color: #c4cee3; font-size: .79em; line-height: 1.35; }
+
+    .capability-map {
       position: relative;
+      display: grid;
+      grid-template-columns: 1fr 1.15fr 1fr;
+      gap: .8em;
+      align-items: center;
+      min-height: 24em;
+      padding: 1.2em;
+      border: 1px solid var(--line);
+      border-radius: 1.4em;
+      background:
+        radial-gradient(circle at center, rgba(118, 104, 242, .18), transparent 36%),
+        rgba(7, 11, 23, .72);
+    }
+    .capability-map::after {
+      content: "개념도";
+      position: absolute;
+      top: .9em;
+      right: 1em;
+      padding: .3em .6em;
+      color: var(--dim);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: .6em;
+      font-weight: 800;
+    }
+    .tool-node {
+      position: relative;
+      z-index: 2;
+      padding: 1.25em .85em;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 1em;
+      background: #10182d;
+    }
+    .tool-node::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: .9em;
+      border-top: 2px solid rgba(147, 167, 220, .38);
+    }
+    .tool-node.ag::after { left: 100%; }
+    .tool-node.vs::after { right: 100%; }
+    .tool-node.ag { border-color: rgba(168,136,255,.45); box-shadow: inset 0 .2em rgba(168,136,255,.5); }
+    .tool-node.vs { border-color: rgba(35,168,242,.48); box-shadow: inset 0 .2em rgba(35,168,242,.5); }
+    .tool-node strong { display: block; margin-bottom: .35em; font-size: 1em; }
+    .tool-node.ag strong { color: #d2c1ff; }
+    .tool-node.vs strong { color: #a8ddff; }
+    .tool-node small { display: block; margin-bottom: .9em; color: var(--dim); font-size: .6em; }
+    .tool-node span { display: block; margin-top: .45em; padding: .42em; border-radius: .45em; color: #b7c2d9; background: rgba(255,255,255,.035); font-size: .62em; }
+    .shared-core {
+      position: relative;
+      z-index: 3;
+      padding: 1.2em .7em;
+      text-align: center;
+      border: 1px solid rgba(118, 146, 255, .48);
+      border-radius: 50%;
+      background: linear-gradient(145deg, rgba(48, 67, 145, .92), rgba(73, 47, 132, .94));
+      box-shadow: 0 0 2.5em rgba(106, 92, 230, .2);
+    }
+    .shared-core b { display: block; margin-bottom: .65em; color: #fff; font-size: .8em; }
+    .core-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .3em; }
+    .core-chips span { padding: .28em .42em; border-radius: .35em; color: #e1e7f7; background: rgba(4,8,18,.4); font-size: .52em; }
+
+    .compare-table { width: 100%; border-collapse: separate; border-spacing: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 1em; background: rgba(8, 13, 26, .8); font-size: .76em; }
+    .compare-table th, .compare-table td { padding: .72em .9em; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); text-align: left; line-height: 1.32; vertical-align: top; }
+    .compare-table th:last-child, .compare-table td:last-child { border-right: 0; }
+    .compare-table tr:last-child td { border-bottom: 0; }
+    .compare-table thead th { color: #eaf0ff; background: #17213b; font-size: .9em; }
+    .compare-table thead th:nth-child(2) { color: #d1c2ff; }
+    .compare-table thead th:nth-child(3) { color: #a9dcff; }
+    .compare-table tbody td:first-child { color: #edf2ff; font-weight: 800; background: rgba(255,255,255,.025); }
+    .compare-table tbody td:not(:first-child) { color: #aebad3; }
+
+    .choice-card { min-height: 20em; padding: 1.5em; }
+    .choice-card.ag { border-top: .25em solid var(--violet); }
+    .choice-card.vs { border-top: .25em solid var(--vs); }
+    .choice-card h3 { font-size: 1.35em; }
+    .choice-card li { margin-bottom: .8em; }
+    .experiment { margin-top: 1.15em; padding: 1em 1.2em; text-align: center; border: 1px solid rgba(71,215,232,.25); border-radius: .8em; color: #c8edf1; background: rgba(71,215,232,.07); font-size: .82em; }
+
+    .loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; align-items: center; margin: 1.8em auto 0; width: 87%; }
+    .loop .node { position: relative; padding: 1.4em .7em; text-align: center; border: 1px solid var(--line); border-radius: 1em; background: var(--panel); font-weight: 900; }
+    .loop .node:not(:last-child)::after { content: "→"; position: absolute; left: calc(100% + .5em); top: 50%; transform: translate(-50%, -50%); color: var(--violet); }
+    .loop .node small { display: block; margin-top: .55em; color: var(--dim); font-size: .6em; font-weight: 600; }
+
+    .quote {
+      max-width: 18em;
+      margin: 1em auto 0;
+      text-align: center;
+      color: #e9edfa;
+      font-size: 1.45em;
+      font-weight: 800;
+      line-height: 1.42;
+      letter-spacing: -.025em;
     }
 
-    .vs-badge::before,
-    .vs-badge::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--bg-border);
-      margin: 0 10px;
+    .source {
+      align-self: end;
+      margin: 0;
+      padding-top: .55em;
+      color: #65718a;
+      border-top: 1px solid rgba(147, 164, 204, .11);
+      font-size: .57em;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .source a { text-decoration: none; }
+
+    .speaker-notes { display: none; }
+    .deck.show-notes .slide.active .speaker-notes {
+      position: absolute;
+      right: 2em;
+      bottom: 5.2em;
+      z-index: 50;
+      display: block;
+      width: 34em;
+      max-height: 10em;
+      overflow: auto;
+      padding: 1em 1.2em;
+      color: #c7d0e5;
+      border: 1px solid var(--line);
+      border-radius: .8em;
+      background: rgba(5, 8, 17, .96);
+      box-shadow: 0 1em 3em rgba(0,0,0,.45);
+      font-size: .7em;
+      line-height: 1.55;
+    }
+    .deck.show-notes .slide.active .speaker-notes::before { content: "발표자 노트"; display: block; margin-bottom: .45em; color: var(--cyan); font-size: .78em; font-weight: 900; letter-spacing: .12em; }
+
+    .controls {
+      position: absolute;
+      right: 2.1em;
+      bottom: 1.25em;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      gap: .55em;
+    }
+    .controls button {
+      width: 2.25em;
+      height: 2.25em;
+      padding: 0;
+      color: #b9c6df;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: rgba(13, 20, 38, .88);
+      cursor: pointer;
+      transition: border-color .2s, color .2s, transform .2s;
+    }
+    .controls button:hover { color: #fff; border-color: rgba(104,168,255,.55); transform: translateY(-1px); }
+    .controls button:disabled { opacity: .28; cursor: default; transform: none; }
+    #slide-counter { min-width: 4em; color: var(--muted); font-size: .72em; font-variant-numeric: tabular-nums; text-align: center; }
+    .progress { position: absolute; inset: 0 auto auto 0; z-index: 100; width: 7.6923%; height: .18em; background: linear-gradient(90deg, var(--blue), var(--violet), var(--cyan)); transition: width .3s ease; box-shadow: 0 0 1em rgba(104,168,255,.48); }
+    .key-hint { position: absolute; left: 2.3em; bottom: 1.65em; z-index: 80; color: #58647e; font-size: .58em; }
+    kbd { padding: .16em .42em; border: 1px solid var(--line); border-radius: .3em; color: #8996b1; background: rgba(255,255,255,.035); font-family: inherit; }
+
+    @media (max-aspect-ratio: 4/3) {
+      .deck { font-size: min(1.24vw, 1.956vh); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .slide, .progress { transition: none; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      html, body { width: auto; height: auto; overflow: visible; background: #fff; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .deck { position: static; width: 16in; height: auto; transform: none; overflow: visible; box-shadow: none; font-size: 10pt; }
+      .ambient, .controls, .progress, .key-hint { display: none !important; }
+      .slide {
+        position: relative;
+        width: 16in;
+        height: 9in;
+        display: grid !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: none !important;
+        break-after: page;
+        page-break-after: always;
+      }
+      .slide:last-of-type { break-after: auto; page-break-after: auto; }
+      .speaker-notes { display: none !important; }
     }
   </style>
 </head>
-
 <body>
+  <main class="deck" id="deck" aria-label="Google Antigravity IDE 프레젠테이션">
+    <div class="ambient a"></div>
+    <div class="ambient b"></div>
+    <div class="progress" id="progress" aria-hidden="true"></div>
 
-  <div id="progress"></div>
-  <div id="hint">
-    <kbd>←</kbd><kbd>→</kbd> 슬라이드 이동 &nbsp;|&nbsp; <kbd>N</kbd> 노트 &nbsp;|&nbsp; <kbd>F</kbd> 전체화면
-  </div>
-
-  <div id="slides">
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 1: TITLE
-══════════════════════════════════════════ -->
-    <div class="slide active"
-      data-note="안녕하세요. 오늘 발표를 맡은 발표자입니다. 첫 번째 세션으로, AI가 바꾼 개발 패러다임의 원리와 로컬 환경의 한계를 극복하는 클라우드 네이티브 IDE에 대해 깊이 있게 알아보겠습니다.">
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:820px;">
-        <div
-          style="font-size: calc(20px * var(--font-scale)); font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cyan); margin-bottom:28px; display:flex; align-items:center; gap:10px;">
-          <span
-            style="width:32px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);display:inline-block;"></span>
-          SESSION 01
+    <section class="slide active" data-title="표지" aria-hidden="false">
+      <header class="slide-head">
+        <div>
+          <p class="eyebrow">Agent-first development · 20 min</p>
+          <h1>Google<br><span class="accent-text">Antigravity IDE</span></h1>
+          <p class="lead">에이전트 중심 개발의 특징·사용법·VS Code와의 차이</p>
         </div>
-        <h1
-          style="font-size: clamp(calc(34px * var(--font-scale)), 4.8vw, calc(64px * var(--font-scale))); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:24px;">
-          AI 코딩 패러다임과<br>
-          <span
-            style="background:linear-gradient(90deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">차세대
-            클라우드 개발 환경</span>
-        </h1>
-        <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.65; font-weight:400; max-width:600px;">
-          대화형 개발의 시작과<br>중력에서 해방된 <strong style="color:var(--neon-blue); font-weight:700;">Antigravity IDE</strong>
-        </p>
-        <div style="margin-top:48px; display:flex; gap:12px; flex-wrap:wrap;">
-          <span
-            style="font-size: calc(20px * var(--font-scale)); padding:6px 16px; border-radius:20px; border:1px solid var(--bg-border); color:var(--text-muted);">AI
-            Coding Paradigm</span>
-          <span
-            style="font-size: calc(20px * var(--font-scale)); padding:6px 16px; border-radius:20px; border:1px solid var(--bg-border); color:var(--text-muted);">LLM
-            Architecture</span>
-          <span
-            style="font-size: calc(20px * var(--font-scale)); padding:6px 16px; border-radius:20px; border:1px solid var(--bg-border); color:var(--text-muted);">Cloud-Native
-            IDE</span>
+        <span class="badge">2026.06.21 기준</span>
+      </header>
+      <div class="content split wide-left">
+        <div>
+          <p class="quote" style="text-align:left;margin-left:0;">코드를 직접 입력하는 흐름에서,<br><span class="accent-text">목표를 정의하고 작업을 검토하는 흐름</span>으로</p>
         </div>
-      </div>
-      <div style="position:absolute; right:64px; top:50%; transform:translateY(-50%); opacity:.08;">
-        <svg width="380" height="380" viewBox="0 0 380 380" fill="none">
-          <circle cx="190" cy="190" r="160" stroke="#38bdf8" stroke-width="1" />
-          <circle cx="190" cy="190" r="120" stroke="#06b6d4" stroke-width="1" />
-          <circle cx="190" cy="190" r="80" stroke="#38bdf8" stroke-width="1" />
-          <circle cx="190" cy="190" r="40" stroke="#06b6d4" stroke-width="1" />
-          <line x1="30" y1="190" x2="350" y2="190" stroke="#38bdf8" stroke-width="1" />
-          <line x1="190" y1="30" x2="190" y2="350" stroke="#38bdf8" stroke-width="1" />
-        </svg>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 2: AGENDA
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="오늘 다룰 4가지 핵심 주제입니다. 거시적인 변화부터 세부 아키텍처까지 50분 동안 낱낱이 파헤쳐 보겠습니다.">
-      <div class="tag">Session Agenda</div>
-      <h2 class="slide-title">오늘 다룰 <span>4가지 핵심 주제</span></h2>
-      <div class="divider"></div>
-      <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:24px;">
-        <div class="card" style="display:flex; gap:18px; align-items:flex-start;">
-          <div
-            style="font-size: clamp(calc(36px * var(--font-scale)), 4vw, calc(52px * var(--font-scale))); font-weight:900; color:rgba(56,189,248,.2); line-height:1; margin-top:6px;font-variant-numeric:tabular-nums;">
-            01</div>
-          <div>
-            <h3 style="font-size: calc(40px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:8px;">개발 패러다임 시프트</h3>
-            <p style="font-size: calc(28px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;"><br>검색·복붙의 종말과 자연어 프롬프팅 모델의 탄생. AI가 개발
-              인터페이스를 완전히 재정의한 과정.</p>
-          </div>
-        </div>
-        <div class="card" style="display:flex; gap:18px; align-items:flex-start;">
-          <div style="font-size: clamp(calc(36px * var(--font-scale)), 4vw, calc(52px * var(--font-scale))); font-weight:900; color:rgba(56,189,248,.2); line-height:1; margin-top:6px;">02
-          </div>
-          <div>
-            <h3 style="font-size: calc(40px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:8px;">LLM 구조와 문맥 제어</h3>
-            <p style="font-size: calc(28px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;"><br>토큰 예측의 수학적 원리와 Context Window 최적화
-              전략. 환각·보안 위험 관리 방법론.</p>
-          </div>
-        </div>
-        <div class="card" style="display:flex; gap:18px; align-items:flex-start;">
-          <div style="font-size: clamp(calc(36px * var(--font-scale)), 4vw, calc(52px * var(--font-scale))); font-weight:900; color:rgba(56,189,248,.2); line-height:1; margin-top:6px;">03
-          </div>
-          <div>
-            <h3 style="font-size: calc(40px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:8px;">레거시 로컬 개발의 한계</h3>
-            <p style="font-size: calc(28px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;"><br>환경 파편화, Fat Client 과부하, "내 컴에선 됐는데"
-              배포 장애. 로컬 개발의 구조적 한계 진단.</p>
-          </div>
-        </div>
-        <div class="card" style="display:flex; gap:18px; align-items:flex-start;">
-          <div style="font-size: clamp(calc(36px * var(--font-scale)), 4vw, calc(52px * var(--font-scale))); font-weight:900; color:rgba(56,189,248,.2); line-height:1; margin-top:6px;">04
-          </div>
-          <div>
-            <h3 style="font-size: calc(40px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:8px;">Antigravity IDE 코어
-              아키텍처</h3>
-            <p style="font-size: calc(28px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;"><br>WASM·원격 컨테이너·스냅샷 복구·보안 VPC. 클라우드
-              IDE의 기술적 뼈대와 기업 도입 전략.</p>
+        <div class="concept" aria-label="Agent Manager 중심의 개발 도구 개념도">
+          <div class="orbit">
+            <div class="satellite editor">⌘ Editor</div>
+            <div class="satellite terminal">›_ Terminal</div>
+            <div class="satellite browser">◎ Browser</div>
+            <div class="hub">Agent<br>Manager</div>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/">antigravity.google</a> · 제품 우열보다 작업 방식의 차이를 다룹니다.</p>
+      <aside class="speaker-notes">Antigravity를 단순 자동완성 도구가 아니라 에이전트 중심 개발 환경으로 소개한다. 제품의 우열보다 작업 방식의 차이를 살펴보는 발표임을 밝힌다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 3: PART 1
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="첫 번째 파트입니다. 우리는 수십 년간 고수해 온 검색 기반 개발 방식을 버리고, AI와의 대화라는 완전히 새로운 인터페이스를 맞이하고 있습니다.">
-      <div
-        style="flex:1; display:flex; flex-direction:column; justify-content:center; align-items:flex-start; max-width:760px;">
-        <div class="part-badge">Part 01 / 04</div>
-        <h2
-          style="font-size: clamp(calc(36px * var(--font-scale)), 5vw, calc(68px * var(--font-scale))); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:20px;">
-          개발 패러다임의<br><span
-            style="background:linear-gradient(90deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">시프트</span>
-        </h2>
-        <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.7; max-width:520px;">
-          검색과 복사·붙여넣기의 종말,<br>그리고 <strong style="color:var(--text-primary);">자연어 지시(Prompting) 모델</strong>의 탄생
-        </p>
-        <div style="margin-top:36px; display:flex; gap:24px;">
-          <div style="text-align:center;">
-            <div
-              style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px;">
-              Before</div>
-            <div style="font-size: calc(22px * var(--font-scale)); filter:grayscale(1) opacity(.4);">🔍</div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">Search & Copy</div>
+    <section class="slide" data-title="Antigravity IDE란" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">01 · Definition</p><h2>IDE를 넘어, <span class="accent-text">에이전트 작업 공간</span>으로</h2></div>
+        <span class="badge">발표 범위: IDE</span>
+      </header>
+      <div class="content split wide-left">
+        <div>
+          <ul class="clean-list">
+            <li>Google이 제공하는 <strong>에이전트 중심 개발 플랫폼</strong>의 IDE 제품</li>
+            <li>코드 편집기, Agent Manager, Artifacts, 코드베이스 이해를 한 환경에 통합</li>
+            <li>에이전트가 편집기·터미널·브라우저를 사용해 계획부터 검증까지 수행</li>
+            <li>플랫폼에는 CLI와 SDK도 있지만, 이번 발표는 <strong>IDE 경험</strong>에 집중</li>
+          </ul>
+        </div>
+        <div>
+          <span class="label">IDE composition · 개념도</span>
+          <div class="formula">
+            <div class="unit">Editor</div><span class="plus">+</span>
+            <div class="unit">Agent<br>Manager</div><span class="plus">+</span>
+            <div class="unit">Artifacts</div><span class="plus">+</span>
+            <div class="unit">Browser<br>Verification</div>
           </div>
-          <div class="flow-arrow" style="font-size: calc(28px * var(--font-scale));">→</div>
-          <div style="text-align:center;">
-            <div
-              style="font-size: calc(20px * var(--font-scale)); color:var(--cyan); text-transform:uppercase; letter-spacing:.1em; margin-bottom:6px;">
-              Now</div>
-            <div style="font-size: calc(22px * var(--font-scale));">💬</div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--cyan);">Prompt & Converse</div>
+          <div class="card" style="margin-top:1.2em;">
+            <h3>핵심 변화</h3>
+            <p>“어떤 코드를 쓸까?”보다 “어떤 결과와 증거를 요구할까?”가 중요해진다.</p>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/product">antigravity.google/product</a> · <a href="https://antigravity.google/docs">antigravity.google/docs</a></p>
+      <aside class="speaker-notes">Antigravity를 클라우드 원격 IDE라고 단정하지 않는다. 현재 공식 설명에 맞춰 설치형 에이전트 IDE로 다룬다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 4: STACKOVERFLOW → AI
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="과거엔 에러가 나면 구글링 후 수많은 탭을 복사/붙여넣기 했습니다. 이제는 에디터 안에서 AI에게 에러 로그를 던지고 대화하며 해결합니다. 개발의 인터페이스가 완전히 바뀐 것입니다.">
-      <div class="tag">Paradigm Shift</div>
-      <h2 class="slide-title"><span>Stack Overflow</span>에서 AI 인라인 대화로</h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <!-- OLD -->
-        <div class="card" style="border-color:rgba(248,113,113,.25); opacity:.85;">
-          <div class="card-title" style="color:var(--accent-red);">🕰 Legacy Flow — 맥락 단절</div>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <div class="hl-row" style="background:rgba(248,113,113,.05); border-color:rgba(248,113,113,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">❌</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">런타임 에러 발생</span>
-            </div>
-            <div style="text-align:center; color:var(--text-muted); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(248,113,113,.05); border-color:rgba(248,113,113,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">🌐</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">브라우저 이동 → 구글 검색</span>
-            </div>
-            <div style="text-align:center; color:var(--text-muted); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(248,113,113,.05); border-color:rgba(248,113,113,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">📑</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">탭 10개 오픈 → 코드 복사·붙여넣기</span>
-            </div>
-            <div style="text-align:center; color:var(--text-muted); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(248,113,113,.05); border-color:rgba(248,113,113,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">⚠️</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">컨텍스트 유실 · 수동 수정 반복</span>
-            </div>
-          </div>
+    <section class="slide" data-title="Agent Manager" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">02 · Core difference</p><h2>Agent Manager: 여러 작업을 <span class="accent-text">관제</span>한다</h2></div>
+        <span class="badge">① Parallel work</span>
+      </header>
+      <div class="content split wide-right">
+        <div>
+          <ul class="clean-list">
+            <li>여러 작업 공간과 에이전트의 상태를 한 화면에서 관리</li>
+            <li>독립적인 작업은 나눠 맡기고 비동기로 진행</li>
+            <li>필요한 순간 Editor View로 전환해 직접 개입</li>
+            <li><strong>의존성이 낮은 작업</strong>에서 병렬화 효과가 크다</li>
+          </ul>
+          <div class="notice">목표는 에이전트 수가 아니라, 좋은 작업 분해와 명확한 검토 지점이다.</div>
         </div>
-        <!-- NEW -->
-        <div class="card" style="border-color:rgba(52,211,153,.25);">
-          <div class="card-title" style="color:var(--accent-green);">⚡ AI-Native Flow — 문맥 유지</div>
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">🔴</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">런타임 에러 발생</span>
-            </div>
-            <div style="text-align:center; color:var(--accent-green); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">⌨️</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">IDE 단축키 → AI 챗봇 즉시 실행</span>
-            </div>
-            <div style="text-align:center; color:var(--accent-green); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">🤖</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">에러 로그 자동 전송 → 맞춤 패치</span>
-            </div>
-            <div style="text-align:center; color:var(--accent-green); font-size: calc(20px * var(--font-scale));">↓</div>
-            <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-              <span style="font-size: calc(20px * var(--font-scale));">✅</span>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">원클릭 적용 · 전체 컨텍스트 보존</span>
-            </div>
+        <div class="manager-board" aria-label="Agent Manager 작업 보드 개념도">
+          <div class="manager-side"><span class="label">Workspaces</span><div class="mini">commerce-web</div><div class="mini">auth-service</div><div class="mini">team-docs</div></div>
+          <div class="manager-main">
+            <span class="label">Active agents · 개념도</span>
+            <div class="agent-row"><div class="dot">F</div><div><b>기능 구현</b><small>checkout validation</small></div><span class="status">실행 중</span></div>
+            <div class="agent-row"><div class="dot">T</div><div><b>테스트 보강</b><small>auth edge cases</small></div><span class="status wait">검토 대기</span></div>
+            <div class="agent-row"><div class="dot">D</div><div><b>문서화</b><small>migration guide</small></div><span class="status">완료</span></div>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/product">antigravity.google/product</a> · Manager-to-Editor handoff 공식 제품 설명</p>
+      <aside class="speaker-notes">에이전트를 많이 실행하는 것이 목적이 아니라 작업을 잘 분해하고 검토 지점을 두는 것이 핵심이라고 강조한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 5: PRODUCTIVITY DATA
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="통계가 보여주듯 AI 코딩은 개발 속도를 반 이상 줄여줍니다. 단순 타이핑과 반복 작업을 AI가 가져가면서 개발자의 생산성은 폭발했습니다.">
-      <div class="tag">GitHub Octoverse Data</div>
-      <h2 class="slide-title">데이터로 증명되는 <span>AI 코딩 생산성</span></h2>
-      <div class="divider"></div>
-      <div style="flex:1; display:flex; align-items:center; gap:40px; margin-top:24px;">
-        <div style="flex:1; display:flex; flex-direction:column; gap:28px;">
-          <div>
-            <div class="stat-num">55<span
-                style="font-size:60%;background:linear-gradient(135deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">%</span>
-            </div>
-            <div class="stat-label">개발 속도 향상</div>
-            <div
-              style="margin-top:10px; width:100%; height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-              <div
-                style="width:55%; height:100%; background:linear-gradient(90deg,var(--cyan),var(--neon-blue)); border-radius:4px; box-shadow:0 0 8px var(--cyan);">
-              </div>
-            </div>
-          </div>
-          <div>
-            <div class="stat-num">73<span
-                style="font-size:60%;background:linear-gradient(135deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">%</span>
-            </div>
-            <div class="stat-label">개발자 작업 만족도 증가</div>
-            <div
-              style="margin-top:10px; width:100%; height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-              <div
-                style="width:73%; height:100%; background:linear-gradient(90deg,var(--cyan),var(--neon-blue)); border-radius:4px; box-shadow:0 0 8px var(--cyan);">
-              </div>
-            </div>
+    <section class="slide" data-title="Artifacts" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">03 · Evidence</p><h2>Artifacts: 결과가 아니라 <span class="accent-text">근거까지</span> 검토한다</h2></div>
+        <span class="badge">② Observable work</span>
+      </header>
+      <div class="content">
+        <div class="artifact-flow" aria-label="Artifact 흐름 개념도">
+          <div class="step"><span class="num">01</span><b>Plan</b><small>접근 방식과 변경 범위</small></div>
+          <div class="step"><span class="num">02</span><b>Tasks</b><small>진행 단계와 상태</small></div>
+          <div class="step"><span class="num">03</span><b>Implementation</b><small>변경 파일과 요약</small></div>
+          <div class="step"><span class="num">04</span><b>Test result</b><small>명령과 검증 결과</small></div>
+          <div class="step"><span class="num">05</span><b>Visual proof</b><small>스크린샷·영상</small></div>
+        </div>
+        <div class="grid-3" style="margin-top:1.4em;">
+          <div class="card kicker"><div class="icon">↗</div><h3>중간 검토</h3><p>실행 전에 계획과 변경 범위를 조정한다.</p></div>
+          <div class="card violet"><div class="icon">◎</div><h3>관찰 가능성</h3><p>무엇을 했는지 사람이 추적할 수 있다.</p></div>
+          <div class="card green"><div class="icon">✓</div><h3>구체적 피드백</h3><p>Artifact의 특정 지점에 의견을 남긴다.</p></div>
+        </div>
+        <div class="trust-line">“에이전트가 했으니 믿는다” → <strong>“에이전트가 남긴 근거를 보고 승인한다”</strong></div>
+      </div>
+      <p class="source">출처: <a href="https://antigravity.google/use-cases/fullstack">antigravity.google/use-cases/fullstack</a> · Artifacts는 정확성 보장이 아닌 검토 수단입니다.</p>
+      <aside class="speaker-notes">Artifacts가 AI의 정확성을 보장하는 것은 아니다. 결과만 받는 대신 중간 계획과 검증 증거를 사람이 판단할 수 있게 만드는 장치라고 설명한다.</aside>
+    </section>
+
+    <section class="slide" data-title="브라우저 검증" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">04 · Browser-in-the-loop</p><h2>코드 변경을 <span class="accent-text">화면에서 검증</span>하고 피드백한다</h2></div>
+        <span class="badge">③ Visual feedback</span>
+      </header>
+      <div class="content split">
+        <div>
+          <ul class="clean-list">
+            <li>에이전트가 Chrome을 탐색하고 실제 페이지와 상호작용</li>
+            <li>스크린샷·영상 형태의 Visual Artifacts 생성</li>
+            <li>화면의 특정 위치에 시각적 코멘트로 수정 요청</li>
+            <li>프론트엔드의 구현→확인→피드백 반복을 한 흐름으로 연결</li>
+          </ul>
+          <div class="cycle" style="margin-top:1.2em;">
+            <div class="step"><b>Code</b><small>변경</small></div><div class="step"><b>Browser</b><small>실행</small></div><div class="step"><b>Proof</b><small>캡처</small></div><div class="step"><b>Revise</b><small>수정</small></div>
           </div>
         </div>
-        <div style="flex:1;">
-          <div class="card" style="padding:28px;">
-            <div class="card-title">무엇이 줄어들었나</div>
-            <div style="display:flex; flex-direction:column; gap:12px; margin-top:4px;">
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">반복 코드 타이핑</span>
-                <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">−72%</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">문법 오류 디버깅 시간</span>
-                <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">−61%</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">API 레퍼런스 조회</span>
-                <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">−58%</span>
-              </div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">단순 테스트 코드 작성</span>
-                <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">−80%</span>
-              </div>
-            </div>
-            <div
-              style="margin-top:16px; padding-top:16px; border-top:1px solid var(--bg-border); font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">
-              Source: GitHub Octoverse Developer Productivity Survey</div>
+        <div>
+          <span class="label">Visual Artifact · 개념도</span>
+          <div class="browser-window">
+            <div class="browser-bar"><i></i><i></i><i></i><div class="address">localhost:3000/checkout</div></div>
+            <div class="browser-canvas"><div class="mock-title"></div><div class="mock-line"></div><div class="mock-line"></div><div class="mock-line short"></div><div class="comment-pin">1</div><div class="comment-box">버튼 간격을 8px 늘리고 모바일 폭을 확인해 주세요.</div></div>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/use-cases/frontend">antigravity.google/use-cases/frontend</a> · 자동화 결과는 테스트·접근성·사용자 검토를 대체하지 않습니다.</p>
+      <aside class="speaker-notes">브라우저 자동화 결과도 테스트 코드, 접근성 검사, 실제 사용자 검토를 대체하지 않는다고 덧붙인다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 6: COGNITIVE LOAD
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="개발자가 로직 자체에 집중할 수 있는 비결은 인지 부하가 줄었기 때문입니다. 사소한 타이핑이나 괄호 맞추기는 이제 신경 쓰지 않아도 됩니다.">
-      <div class="tag">Cognitive Science</div>
-      <h2 class="slide-title">인지 부하<span style="color:var(--text-secondary); font-weight:400;">(Cognitive Load)</span>의
-        감소 메커니즘</h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px; align-items:start;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(248,113,113,.2); background:rgba(248,113,113,.04);">
-            <div
-              style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red); margin-bottom:10px; text-transform:uppercase; letter-spacing:.1em;">
-              🔴 Before — 분산된 인지 에너지</div>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:7px 12px; background:rgba(248,113,113,.05); border-radius:6px; border-left:2px solid var(--accent-red);">
-                문법 오류 수정 & 세미콜론 추적</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:7px 12px; background:rgba(248,113,113,.05); border-radius:6px; border-left:2px solid var(--accent-red);">
-                API 파라미터 순서 확인</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:7px 12px; background:rgba(248,113,113,.05); border-radius:6px; border-left:2px solid var(--accent-red);">
-                보일러플레이트 반복 타이핑</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:7px 12px; background:rgba(248,113,113,.05); border-radius:6px; border-left:2px solid var(--accent-red);">
-                패키지 버전 호환 확인</div>
-            </div>
-          </div>
+    <section class="slide" data-title="설치와 설정" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">05 · Getting started</p><h2>설치보다 먼저 볼 것: <span class="accent-text">권한과 정책</span></h2></div>
+        <span class="badge">macOS · Windows · Linux</span>
+      </header>
+      <div class="content">
+        <div class="setup-line" aria-label="설치와 초기 설정 4단계">
+          <div class="setup-step"><div class="round">1</div><h3>Download</h3><p>공식 페이지에서 운영체제별 설치 파일 선택</p></div>
+          <div class="setup-step"><div class="round">2</div><h3>Sign in</h3><p>Google 계정 또는 조직이 제공한 인증 사용</p></div>
+          <div class="setup-step"><div class="round">3</div><h3>Open workspace</h3><p>폴더·저장소를 열고 가져오기 옵션 확인</p></div>
+          <div class="setup-step"><div class="round">4</div><h3>Permissions</h3><p>자동 실행 범위를 프로젝트 위험도에 맞게 설정</p></div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(52,211,153,.2); background:rgba(52,211,153,.04);">
-            <div
-              style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green); margin-bottom:10px; text-transform:uppercase; letter-spacing:.1em;">
-              ✅ After — 고차원 집중 가능</div>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-primary); padding:7px 12px; background:rgba(52,211,153,.06); border-radius:6px; border-left:2px solid var(--accent-green); font-weight:500;">
-                비즈니스 도메인 논리 설계</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-primary); padding:7px 12px; background:rgba(52,211,153,.06); border-radius:6px; border-left:2px solid var(--accent-green); font-weight:500;">
-                시스템 아키텍처 의사결정</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-primary); padding:7px 12px; background:rgba(52,211,153,.06); border-radius:6px; border-left:2px solid var(--accent-green); font-weight:500;">
-                코드 품질 & 보안 리뷰</div>
-                <br>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-primary); padding:7px 12px; background:rgba(52,211,153,.06); border-radius:6px; border-left:2px solid var(--accent-green); font-weight:500;">
-                제품 로드맵 기획 및 실행</div>
-            </div>
-          </div>
-          <div class="card" style="background:rgba(56,189,248,.04); border-color:rgba(56,189,248,.2);">
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:4px;">결과: 개발자는 "엔지니어"로 진화
-            </div>
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">AI가 Low-level 작업을 흡수함으로써, 개발자는 본질적인 문제 해결에 집중할 수
-              있습니다.</p>
-          </div>
+        <div class="grid-3" style="margin-top:1.25em;">
+          <div class="card"><h3>Agent Permissions</h3><p>파일·명령·외부 작업의 승인 범위를 확인한다.</p></div>
+          <div class="card"><h3>Secure / Sandbox</h3><p>프로젝트 특성에 맞는 격리와 실행 정책을 선택한다.</p></div>
+          <div class="card"><h3>Organization policy</h3><p>회사 코드의 계정·데이터·관리 정책을 먼저 확인한다.</p></div>
+        </div>
+        <div class="notice"><strong>발표 시점 공식 페이지 확인 필요:</strong> 온보딩 UI, 인증, 지원 기능과 정책은 버전에 따라 달라질 수 있습니다.</div>
+      </div>
+      <p class="source">출처: <a href="https://antigravity.google/download">antigravity.google/download</a> · <a href="https://antigravity.google/docs">antigravity.google/docs</a></p>
+      <aside class="speaker-notes">회사 코드에서는 개인 계정 사용 여부, 데이터 정책, 조직 관리 정책을 먼저 확인해야 한다. 최신 온보딩 화면의 안내를 따른다.</aside>
+    </section>
+
+    <section class="slide" data-title="좋은 요청" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">06 · First task</p><h2>좋은 요청 = <span class="accent-text">목표 + 범위 + 제약 + 완료 기준 + 검증</span></h2></div>
+        <span class="badge">Prompt as specification</span>
+      </header>
+      <div class="content split">
+        <div class="prompt-card bad">
+          <span class="label">모호한 요청</span>
+          <h3>작업의 경계와 성공 조건이 없다</h3>
+          <div class="prompt">“로그인 기능 만들어줘”</div>
+          <p style="margin-top:1em;color:var(--dim);font-size:.8em;">에이전트가 범위·API·검증 방식을 추측하게 된다.</p>
+        </div>
+        <div class="prompt-card good">
+          <span class="label">구조화된 요청</span>
+          <h3>완료를 판단할 수 있는 기준을 준다</h3>
+          <div class="prompt">`src/auth` 범위에서 이메일 로그인 오류를 수정하라. 공개 API는 유지하고, 실패 테스트를 먼저 재현한 뒤 관련 테스트와 린트를 통과시켜라. 변경 파일과 검증 결과를 Artifact로 요약하라.</div>
+          <div class="prompt-parts"><span>목표</span><span>범위</span><span>제약</span><span>완료 기준</span><span>검증</span></div>
         </div>
       </div>
-    </div>
+      <p class="source">실무 원칙: 큰 작업은 계획과 구현을 분리하고, 먼저 Plan Artifact를 검토한 뒤 실행합니다.</p>
+      <aside class="speaker-notes">에이전트의 품질은 모델뿐 아니라 문제 정의와 완료 기준의 품질에 크게 좌우된다. 먼저 계획만 요청하는 습관을 권한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 7: PART 2
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="두 번째 파트입니다. AI가 도대체 어떤 원리로 현업 수준의 코드를 뱉어내는지 그 수학적, 기술적 배경을 살펴보겠습니다.">
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:760px;">
-        <div class="part-badge">Part 02 / 04</div>
-        <h2
-          style="font-size: clamp(calc(36px * var(--font-scale)), 5vw, calc(68px * var(--font-scale))); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:20px;">
-          LLM 구조와<br><span
-            style="background:linear-gradient(90deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">문맥(Context)
-            제어</span>
-        </h2>
-        <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.7; max-width:560px;">
-          AI 코딩 엔진의 이면:<br>
-          <strong style="color:var(--text-primary);">거대 언어 모델</strong>이 코드를 예측하는 수학적 원리
-        </p>
-        <div style="margin-top:36px;" class="code-block" style="font-size: calc(20px * var(--font-scale)); max-width:460px;">
-          <span class="cm">// AI가 다음 토큰을 예측하는 원리</span><br>
-          P(<span class="at">next_token</span> | <span class="fn">context</span>) = <span
-            class="fn">softmax</span>(<span class="str">W</span> · <span class="fn">embed</span>(<span
-            class="at">tokens</span>))
+    <section class="slide" data-title="실무 워크플로" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">07 · Workflow</p><h2>요청에서 커밋까지, <span class="accent-text">6개의 검토 지점</span></h2></div>
+        <span class="badge">Human in control</span>
+      </header>
+      <div class="content">
+        <div class="timeline" aria-label="요청부터 승인까지 6단계 흐름">
+          <div class="step"><span class="num">01</span><b>Request</b><small>목표·완료 기준 전달</small></div>
+          <div class="step"><span class="num">02</span><b>Plan</b><small>코드 조사·계획 Artifact</small></div>
+          <div class="step"><span class="num">03</span><b>Approve</b><small>범위·권한 검토</small></div>
+          <div class="step"><span class="num">04</span><b>Execute</b><small>수정·명령 실행</small></div>
+          <div class="step"><span class="num">05</span><b>Verify</b><small>diff·테스트·브라우저</small></div>
+          <div class="step"><span class="num">06</span><b>Commit</b><small>사람이 최종 확인</small></div>
         </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 8: TOKEN PREDICTION
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="AI는 코드를 인간처럼 완전히 '이해'하는 것이 아닙니다. 수많은 오픈소스 데이터 학습을 바탕으로, 지금 문맥에서 다음에 올 가장 확률이 높은 코드 조각을 정교하게 예측하는 수학적 결과물입니다.">
-      <div class="tag">LLM Internals</div>
-      <h2 class="slide-title">토큰(Token) 예측과 <span>확률적 모델</span>의 이해</h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="code-block">
-            <span class="cm">// 코드 → 토큰 분리 예시</span><br>
-            <span class="kw">function</span> <span class="fn">fetchUser</span>(<span class="at">id</span>) {<br>
-            &nbsp;&nbsp;<span class="kw">return</span> <span class="fn">db</span>.<span class="fn">query</span>(<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;<span class="str">'SELECT * FROM users'</span><br>
-            &nbsp;&nbsp;);<br>
-            }<br><br>
-            <span class="cm">// ↓ 토큰 분리</span><br>
-            [<span class="str">"function"</span>, <span class="str">" fetchUser"</span>, <span class="str">"("</span>,
-            <span class="str">"id"</span>, <span class="str">")"</span>, ...]
-          </div>
+        <div class="split" style="margin-top:1.6em;grid-template-columns:1.2fr .8fr;">
           <div class="card">
-            <div class="card-title">확률 계산 흐름</div>
-            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-              <div
-                style="padding:6px 12px; background:rgba(56,189,248,.1); border-radius:6px; font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--neon-blue);">
-                입력 토큰</div>
-              <span style="color:var(--cyan);">→</span>
-              <div
-                style="padding:6px 12px; background:rgba(56,189,248,.1); border-radius:6px; font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--neon-blue);">
-                Embedding</div>
-              <span style="color:var(--cyan);">→</span>
-              <div
-                style="padding:6px 12px; background:rgba(56,189,248,.1); border-radius:6px; font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--neon-blue);">
-                Transformer</div>
-              <span style="color:var(--cyan);">→</span>
-              <div
-                style="padding:6px 12px; background:rgba(52,211,153,.1); border-radius:6px; font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--accent-green);">
-                다음 토큰 ↑확률</div>
+            <h3>검토 체크리스트</h3>
+            <div class="grid-3">
+              <p><strong>Scope</strong><br>요청 밖 변경은 없는가?</p>
+              <p><strong>Evidence</strong><br>테스트 결과가 실제인가?</p>
+              <p><strong>Diff</strong><br>읽고 설명할 수 있는가?</p>
             </div>
           </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="card" style="border-color:rgba(56,189,248,.2);">
-            <div class="card-title">다음 토큰 확률 분포 예시</div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <code
-                  style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green); font-family:'JetBrains Mono',monospace; width:80px;">WHERE</code>
-                <div style="flex:1; height:10px; background:var(--bg-border); border-radius:5px; overflow:hidden;">
-                  <div
-                    style="width:72%; height:100%; background:linear-gradient(90deg,var(--accent-green),rgba(52,211,153,.4)); border-radius:5px;">
-                  </div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green); width:36px;">72%</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <code
-                  style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); font-family:'JetBrains Mono',monospace; width:80px;">JOIN</code>
-                <div style="flex:1; height:10px; background:var(--bg-border); border-radius:5px; overflow:hidden;">
-                  <div
-                    style="width:18%; height:100%; background:var(--bg-border); border-radius:5px; background:rgba(56,189,248,.4);">
-                  </div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:36px;">18%</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <code
-                  style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); font-family:'JetBrains Mono',monospace; width:80px;">LIMIT</code>
-                <div style="flex:1; height:10px; background:var(--bg-border); border-radius:5px; overflow:hidden;">
-                  <div style="width:7%; height:100%; background:rgba(56,189,248,.2); border-radius:5px;"></div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); width:36px;">7%</span>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-title">핵심 인사이트</div>
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;">AI는 코드를 <em
-                style="color:var(--neon-blue); font-style:normal; font-weight:600;">"이해"하지 않습니다</em>. 방대한 오픈소스 코드로 학습한
-              확률적 패턴 매칭의 결과물입니다. 컨텍스트가 풍부할수록 예측 정확도가 높아집니다.</p>
+          <div class="card amber">
+            <h3>고위험 작업</h3>
+            <p>삭제 · 배포 · 자격 증명 접근 · 외부 전송에는 명시적 승인 단계를 둔다.</p>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/docs">antigravity.google/docs</a> · 최소 권한과 사람의 최종 검토를 전제로 한 권장 흐름</p>
+      <aside class="speaker-notes">삭제, 배포, 자격 증명 접근, 외부 전송 같은 고위험 작업에는 명시적인 승인 단계를 둔다. 커밋 전 최종 책임은 사람에게 있다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 9: CONTEXT WINDOW
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="AI에게 만족스러운 코드를 얻으려면 좋은 힌트를 주어야 합니다. 무조건 긴 질문보다, 핵심 문맥만 추려내는 것이 왜 중요한지 알아야 합니다.">
-      <div class="tag">Context Engineering</div>
-      <h2 class="slide-title">Context Window의 <span>중요성</span>과 물리적 한계</h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          <div class="arch-box" data-label="Context Window 구조" style="padding-top:24px;">
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div
-                style="padding:10px; background:rgba(56,189,248,.12); border-radius:6px; border:1px dashed rgba(56,189,248,.3); font-size: calc(20px * var(--font-scale)); color:var(--neon-blue); text-align:center; font-weight:600;">
-                System Prompt (지시문)</div>
-              <div
-                style="padding:10px; background:rgba(6,182,212,.08); border-radius:6px; border:1px dashed rgba(6,182,212,.3); font-size: calc(20px * var(--font-scale)); color:var(--cyan); text-align:center;">
-                @참조 파일 코드 (컨텍스트)</div>
-              <div
-                style="padding:10px; background:rgba(56,189,248,.08); border-radius:6px; border:1px dashed rgba(56,189,248,.3); font-size: calc(20px * var(--font-scale)); color:var(--neon-blue); text-align:center;">
-                대화 히스토리</div>
-              <div
-                style="padding:10px; background:rgba(52,211,153,.12); border-radius:6px; border:1px dashed rgba(52,211,153,.3); font-size: calc(20px * var(--font-scale)); color:var(--accent-green); text-align:center; font-weight:600;">
-                현재 사용자 질문 ← 핵심</div>
-            </div>
-            <div
-              style="margin-top:10px; padding:8px 12px; background:rgba(251,146,60,.07); border-radius:6px; border:1px solid rgba(251,146,60,.2); font-size: calc(20px * var(--font-scale)); color:var(--accent-orange);">
-              ⚠️ 토큰 한도 초과 시 이전 대화 자동 소거됨</div>
-          </div>
+    <section class="slide" data-title="병렬 에이전트 안전" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">08 · Safe parallelism</p><h2>병렬화의 기준은 <span class="accent-text">독립성</span>이다</h2></div>
+        <span class="badge">Speed ≠ no coordination</span>
+      </header>
+      <div class="content split">
+        <div class="card parallel-card good">
+          <span class="label" style="color:var(--green);">병렬화 적합</span>
+          <h3>서로의 결과를 기다리지 않는 작업</h3>
+          <ul><li>서로 다른 모듈 조사</li><li>독립적인 테스트 작성</li><li>문서 초안과 대안 비교</li><li>각기 다른 작업 공간의 변경</li></ul>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card">
-            <div class="card-title">모델별 Context Window 비교</div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:100px;">GPT-4o</span>
-                <div style="flex:1; height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div style="width:64%; height:100%; background:linear-gradient(90deg,var(--cyan),var(--neon-blue));">
-                  </div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); width:60px;">128K tok</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:100px;">Claude 3.7</span>
-                <div style="flex:1; height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div style="width:100%; height:100%; background:linear-gradient(90deg,var(--cyan),var(--neon-blue));">
-                  </div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); width:60px;">200K tok</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:10px;">
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:100px;">Gemini 1.5</span>
-                <div style="flex:1; height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div style="width:80%; height:100%; background:rgba(56,189,248,.4);"></div>
-                </div>
-                <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); width:60px;">1M tok</span>
-              </div>
-            </div>
-          </div>
-          <div class="warn-box">
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-orange); margin-bottom:8px;">⚡ 컨텍스트 노이즈 문제
-            </div>
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;">관련 없는 코드를 무분별하게 넣으면 AI의 집중도가 분산되어
-              답변 품질이 오히려 저하됩니다. <strong style="color:var(--text-primary);">Signal-to-Noise 비율</strong>을 높이는 것이 핵심입니다.
-            </p>
+        <div class="card parallel-card sequence">
+          <span class="label" style="color:var(--amber);">순차 실행 필요</span>
+          <h3>선행 결과가 다음 작업의 입력인 경우</h3>
+          <ul><li>공통 인터페이스 변경 → 소비 코드 수정</li><li>DB 마이그레이션 → 배포</li><li>같은 파일을 동시에 수정</li><li>공통 설정을 바꾸는 작업</li></ul>
+        </div>
+        <div class="card" style="grid-column:1/-1;padding:1em 1.3em;">
+          <div class="grid-4">
+            <p><strong>파일 범위</strong><br><span style="color:var(--dim);">소유 경계 지정</span></p>
+            <p><strong>산출물</strong><br><span style="color:var(--dim);">결과 형식 명시</span></p>
+            <p><strong>금지 사항</strong><br><span style="color:var(--dim);">위험 행동 제한</span></p>
+            <p><strong>통합 검토</strong><br><span style="color:var(--dim);">충돌을 한 번에 확인</span></p>
           </div>
         </div>
       </div>
-    </div>
+      <p class="source">실무 원칙: 속도를 높이기 전에 충돌 비용과 리뷰 부담을 계산합니다.</p>
+      <aside class="speaker-notes">각 에이전트에 파일 범위, 산출물, 금지 사항, 완료 기준을 명확히 지정한다. 작은 범위와 별도 브랜치 또는 작업 공간을 권한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 10: CONTEXT TIPS
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="에디터에 관련 파일들을 미리 열어두어 AI의 '컨텍스트 윈도우' 영역을 유의미하게 채워주는 것이 현업 개발자들의 핵심 실전 팁입니다.">
-      <div class="tag">실전 팁</div>
-      <h2 class="slide-title">AI의 기억력을 최적화하는 <span>문맥 주입법</span></h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="code-block">
-            <span class="cm">// ✅ 효과적인 컨텍스트 주입</span><br><br>
-            <span class="at">@UserService.ts</span> &nbsp;<span class="cm">// 핵심 파일 명시</span><br>
-            <span class="at">@auth.middleware.ts</span><br>
-            <span class="at">@types/user.d.ts</span><br><br>
-            <span class="str">"위 파일 기반으로 JWT 리프레시 토큰</span><br>
-            <span class="str"> 로직을 추가해줘. Redis를 활용하고</span><br>
-            <span class="str"> 기존 에러 핸들링 패턴을 유지해."</span>
-          </div>
-          <div class="code-block" style="border-color:rgba(248,113,113,.2);">
-            <span class="cm">// ❌ 비효율적인 방식</span><br><br>
-            <span style="color:var(--accent-red);">"JWT 토큰 갱신 코드 짜줘"</span><br><br>
-            <span class="cm">// → 프로젝트 맥락 없이 일반적인</span><br>
-            <span class="cm">// 보일러플레이트 코드만 생성됨</span>
-          </div>
+    <section class="slide" data-title="공통점" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">09 · Fair comparison</p><h2>먼저 인정할 것: <span class="accent-text">둘 다 에이전트형 개발</span>을 지원한다</h2></div>
+        <span class="badge">Antigravity × VS Code</span>
+      </header>
+      <div class="content split wide-left">
+        <div class="capability-map" aria-label="Antigravity와 VS Code가 공통 에이전트 역량을 서로 다른 기본 경험으로 제공하는 개념도">
+          <div class="tool-node ag"><strong>Antigravity</strong><small>Agent-first IDE</small><span>Agent Manager</span><span>Artifacts</span></div>
+          <div class="shared-core"><b>공통<br>에이전트 코어</b><div class="core-chips"><span>Planning</span><span>Multi-file</span><span>Terminal</span><span>Testing</span><span>Browser</span><span>Self-correction</span></div></div>
+          <div class="tool-node vs"><strong>VS Code</strong><small>General editor</small><span>Agents window</span><span>Extensions</span></div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(56,189,248,.2);">
-            <div class="card-title">컨텍스트 최적화 체크리스트</div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-              <div class="hl-row"><span>📂</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);"><strong
-                    style="color:var(--text-primary);">@file</strong> 로 관련 파일 3~5개 직접 지정</span></div>
-              <div class="hl-row"><span>📁</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);"><strong
-                    style="color:var(--text-primary);">@folder</strong> 로 관련 디렉토리 지정</span></div>
-              <div class="hl-row"><span>📋</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">에러 스택 트레이스
-                  전체를 포함</span></div>
-              <div class="hl-row"><span>🎯</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">기존 코딩 컨벤션 샘플
-                  1개 포함</span></div>
-              <div class="hl-row"><span>✂️</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">무관한 파일은 과감하게
-                  제외</span></div>
-            </div>
-          </div>
+        <div>
+          <ul class="clean-list">
+            <li>자연어 요청을 바탕으로 계획·편집·명령 실행·테스트를 수행</li>
+            <li>VS Code에는 <strong>Agents window</strong>와 <strong>Chat view</strong>가 존재</li>
+            <li>로컬, Copilot CLI, 클라우드, 서드파티 에이전트 세션을 지원</li>
+            <li>두 도구 모두 권한 제어·컨텍스트 관리·사람의 검토가 필요</li>
+          </ul>
+          <div class="notice">낡은 비교: “Antigravity는 에이전트, VS Code는 자동완성” ✕</div>
         </div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://code.visualstudio.com/docs/agents/overview">code.visualstudio.com/docs/agents/overview</a> · 기능은 빠르게 변하므로 공식 문서 확인</p>
+      <aside class="speaker-notes">VS Code의 기능은 빠르게 변한다. 차별점은 기능 체크리스트 한 줄보다 기본 UX와 생태계에서 찾아야 한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 11: COPILOT → AGENT
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="시중의 도구들은 진화하고 있습니다. 단순한 자동완성을 넘어, 최근에는 프로젝트 전체 구조를 스스로 파악하고 멀티 파일을 수정하는 에이전트 기반 도구들이 주류로 부상했습니다.">
-      <div class="tag">AI Tool Evolution</div>
-      <h2 class="slide-title">AI 코딩 도구의 진화: <span>Copilot → Agent</span></h2>
-      <div class="divider"></div>
-      <div style="flex:1; display:flex; align-items:center; gap:0; margin-top:24px;">
-        <div style="flex:1; display:flex; flex-direction:column; gap:0;">
-          <!-- Stage 1 -->
-          <div
-            style="display:flex; gap:16px; align-items:flex-start; padding:20px; background:rgba(17,24,39,.5); border:1px solid var(--bg-border); border-radius:12px 12px 0 0; border-bottom:none;">
-            <div
-              style="width:40px; height:40px; background:rgba(148,163,184,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size: calc(20px * var(--font-scale)); flex-shrink:0;">
-              🖊</div>
-            <div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;">
-                Stage 1 · 2022</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-secondary); margin-bottom:4px;">줄 단위 자동완성
-                (Copilot)</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">다음 줄 코드를 확률적으로 제안. 탭 키로 수락.</div>
-            </div>
-          </div>
-          <!-- Stage 2 -->
-          <div
-            style="display:flex; gap:16px; align-items:flex-start; padding:20px; background:rgba(17,24,39,.7); border:1px solid rgba(56,189,248,.2); border-top:none; border-bottom:none;">
-            <div
-              style="width:40px; height:40px; background:rgba(56,189,248,.1); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size: calc(20px * var(--font-scale)); flex-shrink:0;">
-              💬</div>
-            <div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--cyan); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;">
-                Stage 2 · 2023</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:4px;">대화형 챗봇 통합 (Chat
-                Mode)</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">자연어로 질문→코드 블록 생성. 파일 단위 수정 가능.</div>
-            </div>
-          </div>
-          <!-- Stage 3 -->
-          <div
-            style="display:flex; gap:16px; align-items:flex-start; padding:20px; background:linear-gradient(135deg,rgba(56,189,248,.08),rgba(6,182,212,.04)); border:1px solid var(--cyan); border-radius:0 0 12px 12px; border-top:none;">
-            <div
-              style="width:40px; height:40px; background:linear-gradient(135deg,var(--cyan),var(--neon-blue)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size: calc(20px * var(--font-scale)); flex-shrink:0; color:var(--bg-deep);">
-              🤖</div>
-            <div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px;">
-                Stage 3 · 2024~ 현재 주류</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:800; color:var(--text-primary); margin-bottom:4px;">자율형 에이전트
-                (Cursor / Windsurf)</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">프로젝트 전체 구조 자동 파악 → 멀티 파일 동시 수정 → 자율적 테스트 실행 및 오류
-                수정.</div>
-            </div>
-          </div>
-        </div>
+    <section class="slide" data-title="차이점" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">10 · Positioning</p><h2>차이는 기능 유무보다 <span class="accent-text">기본 철학과 생태계</span></h2></div>
+        <span class="badge">Workflow defaults matter</span>
+      </header>
+      <div class="content">
+        <table class="compare-table" aria-label="Antigravity IDE와 VS Code 비교표">
+          <thead><tr><th style="width:17%">비교 항목</th><th style="width:41.5%">Antigravity IDE</th><th style="width:41.5%">VS Code</th></tr></thead>
+          <tbody>
+            <tr><td>기본 철학</td><td>에이전트 관제와 검증 중심</td><td>범용 편집기에 에이전트 기능 통합</td></tr>
+            <tr><td>대표 화면</td><td>Agent Manager + Editor View</td><td>Agents window + Chat view + Editor</td></tr>
+            <tr><td>검증 경험</td><td>Artifacts·브라우저 사용·시각 피드백이 핵심 UX</td><td>에이전트·통합 브라우저·확장 기능의 폭넓은 조합</td></tr>
+            <tr><td>AI 생태계</td><td>Google·Gemini와 긴밀하게 최적화</td><td>GitHub Copilot 중심, 모델·에이전트·확장 선택 폭</td></tr>
+            <tr><td>도구 성숙도</td><td>에이전트 워크플로에 집중된 신생 플랫폼</td><td>방대한 확장·언어·디버깅 생태계</td></tr>
+            <tr><td>병렬 작업</td><td>Agent Manager를 전면에 둔 멀티에이전트 관제</td><td>Agents window에서 다양한 에이전트 세션 관리</td></tr>
+          </tbody>
+        </table>
+        <div class="trust-line" style="margin-top:1.1em;">결론은 “누가 더 강한가?”가 아니라 <strong>“우리 팀의 기본 작업 흐름에 무엇이 더 잘 맞는가?”</strong></div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/product">Antigravity Product</a> · <a href="https://code.visualstudio.com/docs/agents/overview">VS Code Agents Overview</a></p>
+      <aside class="speaker-notes">어느 한쪽을 일방적으로 우월하다고 결론 내리지 않는다. VS Code의 정확한 기능 명칭과 범위는 공식 문서 기준으로 표기한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 12: HALLUCINATION
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="하지만 AI가 만능은 아닙니다. 가장 주의해야 할 점은 존재하지 않는 함수나 라이브러리를 제안하는 '환각 현상'입니다.">
-      <div class="tag tag-red">⚠️ Risk Factor</div>
-      <h2 class="slide-title">AI가 발생시키는 위험 요소: <span style="color:var(--accent-red);">환각(Hallucination)</span></h2>
-      <div class="divider" style="background:linear-gradient(90deg,var(--accent-red),rgba(248,113,113,.3));"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="warn-box">
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red); margin-bottom:10px;">실제 발생 사례 패턴</div>
-            <div class="code-block" style="background:#0a0508; border-color:rgba(248,113,113,.2); font-size: calc(20px * var(--font-scale));">
-              <span class="cm">// AI가 생성한 코드 (실행 시 오류)</span><br>
-              <span class="kw">import</span> { <span style="color:var(--accent-red);">smartFilter</span> } <span
-                class="kw">from</span> <span class="str">'lodash-extended'</span>;<br>
-              <span class="cm">// ❌ 존재하지 않는 패키지</span><br><br>
-              <span class="fn">userArray</span>.<span style="color:var(--accent-red);">groupByNestedKey</span>(<span
-                class="str">'dept.id'</span>);<br>
-              <span class="cm">// ❌ 실제로 없는 Array 메서드</span>
-            </div>
+    <section class="slide" data-title="선택 기준" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">11 · Decision</p><h2>도구가 아니라 <span class="accent-text">업무 적합성</span>을 선택한다</h2></div>
+        <span class="badge">Evaluate with real work</span>
+      </header>
+      <div class="content">
+        <div class="split">
+          <div class="card choice-card ag">
+            <h3>Antigravity가 잘 맞는 경우</h3>
+            <ul class="clean-list"><li>병렬 작업과 Artifact 리뷰를 기본 흐름으로 사용</li><li>웹·풀스택의 브라우저 검증을 자주 반복</li><li>Google·Gemini 중심 환경과의 결합이 중요</li></ul>
           </div>
-          <div class="card">
-            <div class="card-title">환각이 발생하는 이유</div>
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.6;">LLM은 확률적 패턴 생성기이므로, <strong
-                style="color:var(--text-primary);">존재하지 않는 API도 그럴듯하게 조합</strong>해 출력합니다. 특히 최신 라이브러리나 마이너 패키지일수록 위험도가
-              높습니다.</p>
+          <div class="card choice-card vs">
+            <h3>VS Code가 잘 맞는 경우</h3>
+            <ul class="clean-list"><li>기존 확장·디버거·Dev Container·조직 표준 유지</li><li>모델·에이전트·확장을 세밀하게 조합</li><li>학습 비용과 운영 안정성이 더 중요</li></ul>
           </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(52,211,153,.2);">
-            <div class="card-title" style="color:var(--accent-green);">🛡 환각 방어 전략</div>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">🔍</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--text-primary);">공식 문서 즉시 교차 검증</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">npm, PyPI 등 공식 레지스트리 확인 필수</div>
-                </div>
-              </div>
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">🧪</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--text-primary);">단위 테스트 즉시 실행</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">생성된 코드를 바로 실행해 동작 확인</div>
-                </div>
-              </div>
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">📌</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--text-primary);">버전 고정 명시</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">프롬프트에 라이브러리 버전을 명확히 지정</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div class="experiment"><strong>가장 좋은 평가법:</strong> 작은 실제 과제를 동일한 완료 기준으로 수행하고 품질 · 시간 · 검토 부담을 함께 측정한다.</div>
+        <div class="notice"><strong>발표 시점 공식 페이지 확인 필요:</strong> 버전, 요금, 지원 모델, 사용량 제한은 변경될 수 있습니다.</div>
       </div>
-    </div>
+      <p class="source">출처: <a href="https://antigravity.google/pricing">antigravity.google/pricing</a> · <a href="https://code.visualstudio.com/docs/agents/agent-types/local-agents">VS Code local agents</a></p>
+      <aside class="speaker-notes">개인 취향이 아니라 저장소 적합성, 보안 정책, 리뷰 비용, 팀 표준으로 평가하라고 제안한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 13: SECURITY
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="기업 환경에서 AI를 쓸 때 가장 민감한 건 '보안'입니다. 우리 회사의 핵심 자산인 소스코드가 외부에 유출되거나 AI의 학습 데이터로 쓰이면 안 되니까요.">
-      <div class="tag tag-red">🔐 Security</div>
-      <h2 class="slide-title">데이터 보안과 <span style="color:var(--accent-red);">소스코드 유출</span> 이슈</h2>
-      <div class="divider" style="background:linear-gradient(90deg,var(--accent-red),rgba(248,113,113,.3));"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="arch-box" data-label="퍼블릭 LLM 데이터 흐름" style="padding-top:24px;">
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div
-                style="padding:10px; background:rgba(56,189,248,.08); border-radius:6px; font-size: calc(20px * var(--font-scale)); color:var(--neon-blue); text-align:center;">
-                개발자 입력 (내부 코드 포함)</div>
-              <div style="text-align:center; color:var(--accent-red); font-size: calc(20px * var(--font-scale));">↓</div>
-              <div
-                style="padding:10px; background:rgba(248,113,113,.1); border-radius:6px; border:1px solid rgba(248,113,113,.3); font-size: calc(20px * var(--font-scale)); color:var(--accent-red); text-align:center; font-weight:600;">
-                ⚠️ 퍼블릭 LLM 서버 (외부)</div>
-              <div style="text-align:center; color:var(--accent-red); font-size: calc(20px * var(--font-scale));">↓</div>
-              <div
-                style="padding:10px; background:rgba(248,113,113,.07); border-radius:6px; font-size: calc(20px * var(--font-scale)); color:var(--accent-red); text-align:center;">
-                AI 학습 데이터로 재사용 가능성</div>
-            </div>
-          </div>
+    <section class="slide" data-title="결론" aria-hidden="true">
+      <header class="slide-head">
+        <div><p class="eyebrow">12 · Takeaway</p><h2>에이전트를 쓰는 능력은 <span class="accent-text">검토하는 능력</span>이다</h2></div>
+        <span class="badge">Q &amp; A</span>
+      </header>
+      <div class="content">
+        <div class="loop" aria-label="에이전트 활용 4단계 루프">
+          <div class="node">Intent<small>목표와 완료 기준</small></div>
+          <div class="node">Delegation<small>범위와 권한</small></div>
+          <div class="node">Evidence<small>diff·테스트·Artifact</small></div>
+          <div class="node">Review<small>판단과 승인</small></div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(52,211,153,.2);">
-            <div class="card-title" style="color:var(--accent-green);">✅ 기업 보안 솔루션</div>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-top:4px;">
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">🔒</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">Zero-Data Retention (ZDR)
-                  </div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">입력 데이터를 서버에 저장하지 않는 기업용 플랜</div>
-                </div>
-              </div>
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">🏠</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">온프레미스 / 프라이빗 VPC 배포</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">모델 자체를 사내 인프라에 격리 운영</div>
-                </div>
-              </div>
-              <div class="hl-row" style="background:rgba(52,211,153,.05); border-color:rgba(52,211,153,.12);">
-                <span style="font-size: calc(20px * var(--font-scale));">📜</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">AI 사용 정책 수립 의무화</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">입력 허용/금지 정보 범위 규정 문서화</div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="grid-3" style="margin-top:1.6em;">
+          <div class="card violet"><h3>Antigravity의 중심</h3><p>Agent Manager + Artifacts + 브라우저 검증</p></div>
+          <div class="card kicker"><h3>VS Code와의 차이</h3><p>가능/불가능보다 기본 경험과 생태계</p></div>
+          <div class="card green"><h3>좋은 결과의 조건</h3><p>명확한 기준 + 최소 권한 + 증거 검토</p></div>
         </div>
+        <p class="quote">“코드 작성 속도보다, 작업을 분해하고 <span class="accent-text">증거를 검토하는 능력</span>이 더 중요해진다.”</p>
       </div>
-    </div>
+      <p class="source">최신 정보: <a href="https://antigravity.google/changelog">antigravity.google/changelog</a> · <a href="https://code.visualstudio.com/docs/agents/approvals">VS Code approvals</a></p>
+      <aside class="speaker-notes">Q&amp;A를 유도하고, 실제 도입 전 공식 문서에서 최신 버전과 정책을 다시 확인하도록 안내한다.</aside>
+    </section>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 14: PART 3
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="세 번째 파트입니다. AI로 인해 개발 속도는 빨라졌는데, 정작 개발을 진행하는 우리의 '컴퓨터 환경'은 어떤 한계에 봉착했는지 다뤄보겠습니다.">
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:760px;">
-        <div class="part-badge">Part 03 / 04</div>
-        <h2
-          style="font-size: clamp(calc(36px * var(--font-scale)), 5vw, calc(68px * var(--font-scale))); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:20px;">
-          레거시 로컬 개발<br><span
-            style="background:linear-gradient(90deg,var(--accent-red),var(--accent-orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">환경의
-            한계</span>
-        </h2>
-        <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.7; max-width:560px;">
-          <em style="color:var(--text-primary); font-style:normal; font-weight:700;">"내 컴퓨터에서는 잘 되는데요?"</em><br>
-          왜 로컬 개발 세팅은 늘 고통을 수반하는가?
-        </p>
-      </div>
-    </div>
+    <div class="key-hint" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>N</kbd> 노트 · <kbd>F</kbd> 전체화면</div>
+    <nav class="controls" aria-label="슬라이드 탐색">
+      <button type="button" id="prev" aria-label="이전 슬라이드">←</button>
+      <span id="slide-counter" aria-live="polite">1 / 13</span>
+      <button type="button" id="next" aria-label="다음 슬라이드">→</button>
+    </nav>
+  </main>
 
-    <!-- ══════════════════════════════════════════
-  SLIDE 15: FRAGMENTATION
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="신입 온보딩에 환경 세팅만 며칠씩 걸리는 고통은 여전합니다. OS 버전이 조금만 달라도 빌드가 깨지기 일쑤죠.">
-      <div class="tag tag-orange">🔧 Pain Point 01</div>
-      <h2 class="slide-title">환경 파편화와 <span style="color:var(--accent-orange);">온보딩 병목</span></h2>
-      <div class="divider" style="background:linear-gradient(90deg,var(--accent-orange),rgba(251,146,60,.3));"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(251,146,60,.2);">
-            <div class="card-title" style="color:var(--accent-orange);">OS별 의존성 충돌 지도</div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-              <div
-                style="padding:10px 14px; background:rgba(251,146,60,.06); border-radius:8px; border-left:2px solid var(--accent-orange);">
-                <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">🍎 macOS (ARM M-series)</div>
-                <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:3px;">Rosetta 2 호환 이슈, node-gyp 네이티브 빌드
-                  실패</div>
-              </div>
-              <div
-                style="padding:10px 14px; background:rgba(251,146,60,.06); border-radius:8px; border-left:2px solid var(--accent-orange);">
-                <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">🪟 Windows</div>
-                <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:3px;">경로 구분자 충돌, WSL2 파일 시스템 퍼포먼스 저하
-                </div>
-              </div>
-              <div
-                style="padding:10px 14px; background:rgba(251,146,60,.06); border-radius:8px; border-left:2px solid var(--accent-orange);">
-                <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">🐧 Linux (배포판별)</div>
-                <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:3px;">glibc 버전 불일치, 패키지 관리자 충돌</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div
-            style="background:linear-gradient(135deg,rgba(251,146,60,.08),rgba(251,146,60,.03)); border:1px solid rgba(251,146,60,.2); border-radius:12px; padding:24px; text-align:center;">
-            <div style="font-size: calc(70px * var(--font-scale)); font-weight:900; line-height:1; color:var(--accent-orange);">3<span
-                style="font-size: calc(40px * var(--font-scale));">일+</span></div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:8px; font-weight:500;">평균 신규 입사자 개발 환경
-              세팅 소요 시간</div>
-          </div>
-          <div class="card">
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.65;">개발자가 <strong
-                style="color:var(--text-primary);">첫 유의미한 커밋</strong>을 하기까지 3~5일이 소요되는 것은 현업에서 흔한 현실입니다. 이 시간은 비즈니스 가치를
-              전혀 생산하지 못하는 <strong style="color:var(--accent-orange);">순수 낭비 비용</strong>입니다.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 16: FAT CLIENT
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="마이크로서비스 아키텍처 시대에 로컬에서 컨테이너 몇 개만 돌려도 팬 소음과 함께 컴퓨터가 멈추려고 합니다. 이것이 '뚱뚱한 로컬 클라이언트'의 한계입니다.">
-      <div class="tag tag-orange">🔥 Pain Point 02</div>
-      <h2 class="slide-title">무거운 리소스와 하드웨어 한계 — <span style="color:var(--accent-orange);">Fat Client</span></h2>
-      <div class="divider" style="background:linear-gradient(90deg,var(--accent-orange),rgba(251,146,60,.3));"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="card" style="border-color:rgba(251,146,60,.2);">
-            <div class="card-title">로컬 개발자 PC 리소스 점유 현황</div>
-            <div style="display:flex; flex-direction:column; gap:10px; margin-top:6px;">
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">node_modules 용량</span><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--accent-orange);">~800MB / 프로젝트</span></div>
-                <div style="height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div
-                    style="width:80%; height:100%; background:linear-gradient(90deg,var(--accent-orange),rgba(251,146,60,.4));">
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">Docker 컨테이너 RAM 점유</span><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--accent-orange);">~4GB+ (MSA 환경)</span></div>
-                <div style="height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div
-                    style="width:75%; height:100%; background:linear-gradient(90deg,var(--accent-red),rgba(248,113,113,.4));">
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">IDE + 분석 도구 CPU</span><span
-                    style="font-size: calc(20px * var(--font-scale)); color:var(--accent-orange);">빌드 시 100%</span></div>
-                <div style="height:8px; background:var(--bg-border); border-radius:4px; overflow:hidden;">
-                  <div
-                    style="width:100%; height:100%; background:linear-gradient(90deg,var(--accent-red),var(--accent-orange));">
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="code-block" style="border-color:rgba(251,146,60,.2); font-size: calc(20px * var(--font-scale));">
-            <span class="cm"># MSA 환경 docker-compose 실행 시</span><br>
-            $ docker-compose up<br>
-            <span style="color:var(--accent-orange);">⚠ CPU: 98%, RAM: 14.2/16GB</span><br>
-            <span style="color:var(--accent-red);">⚠ 팬 소음 MAX, 시스템 응답 없음</span>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-          <div
-            style="text-align:center; padding:28px; background:rgba(251,146,60,.06); border:1px solid rgba(251,146,60,.2); border-radius:12px;">
-            <div style="font-size: calc(64px * var(--font-scale)); line-height:1.1;">🔥</div>
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:800; color:var(--accent-orange); margin-top:10px;">Fat Client 증후군
-            </div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:8px; line-height:1.6;">
-              개발자 노트북은<br><strong style="color:var(--text-primary);">휴대용 서버실</strong>이 되었다
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 17: WORKS ON MY MACHINE
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="개발자라면 누구나 한 번쯤 '내 컴퓨터에서는 잘 되는데 왜 서버에서는 안 되지?'라는 장애 상황을 겪어보셨을 겁니다.">
-      <div class="tag tag-red">💥 Pain Point 03</div>
-      <h2 class="slide-title">환경 불일치 — <span style="color:var(--accent-red);">"Works on My Machine"</span></h2>
-      <div class="divider" style="background:linear-gradient(90deg,var(--accent-red),rgba(248,113,113,.3));"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="arch-box" data-label="환경 불일치 시나리오" style="padding-top:24px;">
-            <div style="display:flex; flex-direction:column; gap:10px;">
-              <div style="display:flex; gap:12px; align-items:center;">
-                <div
-                  style="flex:1; padding:10px; background:rgba(52,211,153,.08); border-radius:8px; border:1px solid rgba(52,211,153,.2); font-size: calc(20px * var(--font-scale)); text-align:center;">
-                  <div style="color:var(--accent-green); font-weight:700;">개발자 로컬</div>
-                  <div style="color:var(--text-muted); margin-top:4px;">Node 20.x<br>PostgreSQL 16</div>
-                </div>
-                <span style="color:var(--accent-red); font-size: calc(20px * var(--font-scale));">≠</span>
-                <div
-                  style="flex:1; padding:10px; background:rgba(248,113,113,.08); border-radius:8px; border:1px solid rgba(248,113,113,.2); font-size: calc(20px * var(--font-scale)); text-align:center;">
-                  <div style="color:var(--accent-red); font-weight:700;">운영 서버 (Prod)</div>
-                  <div style="color:var(--text-muted); margin-top:4px;">Node 18.x<br>PostgreSQL 14</div>
-                </div>
-              </div>
-              <div
-                style="padding:10px; background:rgba(248,113,113,.07); border-radius:8px; text-align:center; font-size: calc(20px * var(--font-scale)); color:var(--accent-red); font-weight:600;">
-                🚨 배포 후 즉시 500 Error 발생
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-title">실제 발생 원인 TOP 3</div>
-            <div style="display:flex; flex-direction:column; gap:7px; margin-top:4px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:6px 10px; border-left:2px solid var(--accent-red); background:rgba(248,113,113,.04); border-radius:0 6px 6px 0;">
-                런타임 버전 미스매치 (Node, Python, JDK)</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:6px 10px; border-left:2px solid var(--accent-orange); background:rgba(251,146,60,.04); border-radius:0 6px 6px 0;">
-                환경 변수 미적용 또는 오타</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); padding:6px 10px; border-left:2px solid var(--accent-orange); background:rgba(251,146,60,.04); border-radius:0 6px 6px 0;">
-                OS별 파일 경로·인코딩 차이</div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-          <div
-            style="padding:28px; background:rgba(248,113,113,.05); border:1px solid rgba(248,113,113,.2); border-radius:12px; text-align:center;">
-            <div style="font-size: calc(48px * var(--font-scale)); font-weight:900; color:var(--accent-red); line-height:1.1;">2<span
-                style="font-size: calc(28px * var(--font-scale));">시간+</span></div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:8px;">배포 당일 평균 장애 대응 시간</div>
-            <div
-              style="margin-top:16px; font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary); font-style:italic;">"내
-              컴에서는 됐는데..."</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 18: PART 4
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="마지막 네 번째 파트입니다. 이러한 로컬의 고통을 완벽하게 해결하기 위해 등장한 Antigravity IDE의 내부 아키텍처를 딥다이브 해보겠습니다.">
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; max-width:760px;">
-        <div class="part-badge">Part 04 / 04</div>
-        <h2
-          style="font-size: clamp(calc(32px * var(--font-scale)), 4.5vw, calc(62px * var(--font-scale))); font-weight:900; line-height:1.1; letter-spacing:-.03em; margin-bottom:20px;">
-          <span
-            style="background:linear-gradient(90deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Antigravity
-            IDE</span><br>
-          코어 아키텍처
-        </h2>
-        <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.7; max-width:560px;">
-          중력을 거스르는 가벼움:<br>
-          <strong style="color:var(--text-primary);">로컬 자원 소모 제로</strong>를 지향하는<br>차세대 클라우드 IDE의 기술적 뼈대
-        </p>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 19: THIN CLIENT
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="이제 컴퓨터 사양에 구애받지 않는 클라우드 개발 환경으로 전환해야 합니다. 내 디바이스의 물리적 사양과 성능이라는 '중력'을 벗어나는 시작점입니다.">
-      <div class="tag">Architecture</div>
-      <h2 class="slide-title">Thin Client 패러다임: <span>가상화의 극대화</span></h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <!-- Fat -->
-        <div class="card" style="border-color:rgba(248,113,113,.25); opacity:.85;">
-          <div class="card-title" style="color:var(--accent-red);">🏋️ Fat Client (기존)</div>
-          <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
-            <div
-              style="padding:12px; background:rgba(248,113,113,.07); border-radius:8px; border:1px solid rgba(248,113,113,.15); font-size: calc(20px * var(--font-scale));">
-              <div style="color:var(--text-primary); font-weight:700; margin-bottom:6px;">💻 개발자 로컬 노트북</div>
-              <div style="color:var(--text-muted); font-size: calc(20px * var(--font-scale)); line-height:1.6;">
-                ▸ 소스코드 저장<br>
-                ▸ 컴파일·빌드 처리<br>
-                ▸ Docker 컨테이너 실행<br>
-                ▸ 테스트 서버 로컬 구동<br>
-                ▸ IDE 자체 처리
-              </div>
-            </div>
-            <div style="text-align:center; font-size: calc(20px * var(--font-scale)); color:var(--accent-red); font-weight:600;">→ 고사양 하드웨어 필수 의존
-            </div>
-          </div>
-        </div>
-        <!-- Thin -->
-        <div class="card" style="border-color:rgba(52,211,153,.25);">
-          <div class="card-title" style="color:var(--accent-green);">🪶 Thin Client (Antigravity)</div>
-          <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
-            <div
-              style="padding:12px; background:rgba(52,211,153,.07); border-radius:8px; border:1px solid rgba(52,211,153,.15); font-size: calc(20px * var(--font-scale));">
-              <div style="color:var(--text-primary); font-weight:700; margin-bottom:6px;">📱 개발자 디바이스 (어떤 기기든)</div>
-              <div style="color:var(--text-muted); font-size: calc(20px * var(--font-scale)); line-height:1.6;">
-                ▸ 키보드 입력 전송만<br>
-                ▸ 화면 렌더링만 담당
-              </div>
-            </div>
-            <div
-              style="padding:12px; background:rgba(56,189,248,.07); border-radius:8px; border:1px solid rgba(56,189,248,.15); font-size: calc(20px * var(--font-scale));">
-              <div style="color:var(--neon-blue); font-weight:700; margin-bottom:6px;">☁️ 원격 클라우드 인프라</div>
-              <div style="color:var(--text-muted); font-size: calc(20px * var(--font-scale)); line-height:1.6;">
-                ▸ 소스코드 저장 및 관리<br>
-                ▸ 고성능 컴파일·빌드<br>
-                ▸ 컨테이너 오케스트레이션<br>
-                ▸ AI 코딩 엔진 연동
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 20: WASM + REMOTE CONTAINER
-══════════════════════════════════════════ -->
-    <div class="slide"
-      data-note="Antigravity IDE는 이 철학을 극대화했습니다. 브라우저단은 웹어셈블리로 가볍고 빠르게 돌리고, 실제 파일 저장과 빌드 연산은 고성능 원격 리눅스 서버가 전담합니다.">
-      <div class="tag">Core Architecture</div>
-      <h2 class="slide-title">내부 구조: <span>WASM</span> + 원격 백엔드 컨테이너</h2>
-      <div class="divider"></div>
-      <div style="flex:1; margin-top:24px; display:flex; flex-direction:column; gap:16px;">
-        <!-- Architecture diagram -->
-        <div style="display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:12px; align-items:center;">
-          <!-- Browser -->
-          <div class="arch-box" data-label="Browser (Client)" style="padding-top:28px; text-align:center;">
-            <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:10px;">🌐</div>
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--neon-blue); margin-bottom:8px;">WebAssembly Engine
-            </div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(56,189,248,.07); border-radius:4px;">
-                UI 렌더링 (네이티브 속도)</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(56,189,248,.07); border-radius:4px;">
-                키 입력 캡처 & 버퍼링</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(56,189,248,.07); border-radius:4px;">
-                낙관적 UI 업데이트</div>
-            </div>
-          </div>
-          <!-- Arrow 1 -->
-          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-            <span style="color:var(--cyan); font-size: calc(22px * var(--font-scale));">⇄</span>
-            <span
-              style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); text-align:center; white-space:nowrap;">WebSocket<br>TLS
-              1.3</span>
-          </div>
-          <!-- API Gateway -->
-          <div class="arch-box" data-label="API Gateway"
-            style="padding-top:28px; text-align:center; border-color:var(--cyan);">
-            <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:10px;">🔀</div>
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--cyan); margin-bottom:8px;">Load Balancer</div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(6,182,212,.07); border-radius:4px;">
-                인증 & 권한 검증</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(6,182,212,.07); border-radius:4px;">
-                세션 라우팅</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(6,182,212,.07); border-radius:4px;">
-                엣지 리전 최적화</div>
-            </div>
-          </div>
-          <!-- Arrow 2 -->
-          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-            <span style="color:var(--cyan); font-size: calc(22px * var(--font-scale));">⇄</span>
-            <span
-              style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); text-align:center; white-space:nowrap;">gRPC<br>mTLS</span>
-          </div>
-          <!-- Remote Container -->
-          <div class="arch-box" data-label="Remote Dev Container"
-            style="padding-top:28px; text-align:center; border-color:var(--accent-green); background:linear-gradient(135deg,rgba(52,211,153,.05),rgba(52,211,153,.02));">
-            <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:10px;">🐳</div>
-            <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green); margin-bottom:8px;">K8s Dev Pod
-            </div>
-            <div style="display:flex; flex-direction:column; gap:5px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(52,211,153,.07); border-radius:4px;">
-                파일 시스템 & Git</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(52,211,153,.07); border-radius:4px;">
-                빌드 & 테스트 실행</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); padding:4px 8px; background:rgba(52,211,153,.07); border-radius:4px;">
-                Language Server Protocol</div>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="border-color:rgba(56,189,248,.2); background:rgba(56,189,248,.04);">
-          <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.6; text-align:center;">모든 <strong
-              style="color:var(--text-primary);">무거운 연산은 클라우드</strong>에서, 개발자 기기는 <strong
-              style="color:var(--neon-blue);">디스플레이 터미널</strong>로만 동작</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 21: ZERO SETUP
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="링크 하나만 누르면 선배가 쓰던 개발 환경이 내 브라우저에 그대로 열립니다. 더 이상 환경 세팅과 패키지 다운로드에 반나절을 버리지 않습니다.">
-      <div class="tag tag-green">⚡ Killer Feature 01</div>
-      <h2 class="slide-title">링크 접속 즉시 코딩 — <span>Zero Setup</span></h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div style="display:flex; flex-direction:column; gap:10px;">
-            <div class="step">
-              <div class="step-num">1</div>
-              <div class="step-body">
-                <h4>Repository URL 클릭</h4>
-                <p>GitHub/GitLab PR 링크 또는 초대 링크 클릭 한 번</p>
-              </div>
-            </div>
-            <div style="width:1px; height:16px; background:var(--bg-border); margin-left:15px;"></div>
-            <div class="step">
-              <div class="step-num">2</div>
-              <div class="step-body">
-                <h4>Pre-built 컨테이너 로드 (5초)</h4>
-                <p>의존성·컴파일러·런타임이 이미 구성된 환경이 즉시 마운트</p>
-              </div>
-            </div>
-            <div style="width:1px; height:16px; background:var(--bg-border); margin-left:15px;"></div>
-            <div class="step">
-              <div class="step-num">3</div>
-              <div class="step-body">
-                <h4>즉시 코딩 시작</h4>
-                <p>에디터·터미널·웹 프리뷰가 완전히 준비된 상태</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-          <div
-            style="background:var(--bg-card); border:1px solid var(--bg-border); border-radius:12px; overflow:hidden;">
-            <div style="background:var(--bg-elevated); padding:10px 16px; display:flex; gap:6px; align-items:center;">
-              <div style="width:10px; height:10px; border-radius:50%; background:#ef4444;"></div>
-              <div style="width:10px; height:10px; border-radius:50%; background:#eab308;"></div>
-              <div style="width:10px; height:10px; border-radius:50%; background:#22c55e;"></div>
-              <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-left:8px;">Antigravity IDE — browser</span>
-            </div>
-            <div style="padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size: calc(20px * var(--font-scale));">
-              <div
-                style="background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.15); border-radius:6px; padding:10px;">
-                <div style="color:var(--neon-blue); font-weight:600; margin-bottom:6px;">📝 Editor</div>
-                <div
-                  style="height:60px; background:rgba(0,0,0,.3); border-radius:4px; padding:6px; font-family:'JetBrains Mono',monospace; color:var(--text-muted); font-size: calc(20px * var(--font-scale)); line-height:1.5;">
-                  <span style="color:#c792ea;">const</span> app = ...<br>
-                  <span style="color:#82aaff;">app</span>.listen(<span style="color:#f78c6c;">3000</span>)
-                </div>
-              </div>
-              <div
-                style="background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.15); border-radius:6px; padding:10px;">
-                <div style="color:var(--accent-green); font-weight:600; margin-bottom:6px;">🌐 Preview</div>
-                <div
-                  style="height:60px; background:rgba(0,0,0,.3); border-radius:4px; display:flex; align-items:center; justify-content:center; color:var(--accent-green); font-size: calc(20px * var(--font-scale));">
-                  ✓ localhost:3000</div>
-              </div>
-              <div
-                style="grid-column:span 2; background:rgba(0,0,0,.4); border-radius:6px; padding:8px; font-family:'JetBrains Mono',monospace; color:var(--accent-green); font-size: calc(20px * var(--font-scale)); line-height:1.5;">
-                $ npm run dev<br>
-                <span style="color:var(--text-muted);">Server ready on port 3000 ✓</span>
-              </div>
-            </div>
-          </div>
-          <div
-            style="text-align:center; padding:14px; background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.2); border-radius:10px;">
-            <div style="font-size: calc(32px * var(--font-scale)); font-weight:900; color:var(--accent-green);">3일 → <span
-                style="font-size: calc(20px * var(--font-scale));">5초</span></div>
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:4px;">온보딩 첫 코딩 시작까지</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══════════════════════════════════════════
-  SLIDE 22: PAIR PROGRAMMING
-══════════════════════════════════════════ -->
-    <div class="slide" data-note="원격 근무 중에도 화면 공유 없이 한 공간에 들어와 실시간으로 페어 프로그래밍을 하고 즉시 에러를 교정할 수 있어 협업 효율이 극대화됩니다.">
-      <div class="tag tag-green">🤝 Killer Feature 02</div>
-      <h2 class="slide-title">구글 문서식 <span>실시간 동시 편집</span> — Pair Programming</h2>
-      <div class="divider"></div>
-      <div class="two-col" style="flex:1; margin-top:20px;">
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div class="code-block" style="position:relative;">
-            <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-bottom:8px;">// 실시간 멀티 커서 편집 화면</div>
-            <span class="kw">async function</span> <span class="fn">processOrder</span>(<span class="at">orderId</span>)
-            {<br>
-            &nbsp;&nbsp;<span class="kw">const</span> order = <span class="kw">await</span> <span
-              class="fn">db</span>.<span class="fn">find</span>(<span class="at">orderId</span>);<br>
-            &nbsp;&nbsp;<span style="background:rgba(59,130,246,.25); border-radius:2px;">&nbsp;</span><span
-              style="color:#60a5fa; font-size: calc(20px * var(--font-scale));">김개발</span><br>
-            &nbsp;&nbsp;<span style="background:rgba(168,85,247,.25); border-radius:2px;">&nbsp;</span><span
-              style="color:#c084fc; font-size: calc(20px * var(--font-scale));">이시니어</span><br>
-            &nbsp;&nbsp;<span class="kw">return</span> <span class="fn">validate</span>(order);<br>
-            }
-          </div>
-          <div class="card">
-            <div class="card-title">기반 기술</div>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-              <div class="hl-row">
-                <span style="font-size: calc(20px * var(--font-scale));">🔗</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--text-primary);">CRDT 알고리즘</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">충돌 없는 분산 데이터 타입으로 동시 편집 충돌 원천 제거</div>
-                </div>
-              </div>
-              <div class="hl-row">
-                <span style="font-size: calc(20px * var(--font-scale));">⚡</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:600; color:var(--text-primary);">WebSocket 실시간 동기화</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">키 입력 → 전 세계 참여자 화면에 < 50ms 반영</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-            <div
-              style="padding:24px; background:rgba(52,211,153,.05); border:1px solid rgba(52,211,153,.2); border-radius:12px;">
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green); margin-bottom:16px;">🌏 동시 접속 개발
-                현황</div>
-              <div style="display:flex; flex-direction:column; gap:10px;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:10px; height:10px; border-radius:50%; background:#60a5fa; flex-shrink:0;"></div>
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">김개발 — 서울 (functions.ts)</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:10px; height:10px; border-radius:50%; background:#c084fc; flex-shrink:0;"></div>
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">이시니어 — 부산 (same file)</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                  <div style="width:10px; height:10px; border-radius:50%; background:#34d399; flex-shrink:0;"></div>
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">박원격 — 싱가포르 (routes.ts)</span>
-                </div>
-              </div>
-              <div
-                style="margin-top:16px; padding:10px; background:rgba(52,211,153,.08); border-radius:8px; font-size: calc(20px * var(--font-scale)); color:var(--accent-green); text-align:center; font-weight:600;">
-                화면 공유 Zero · 충돌 Zero</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 23: ELASTIC COMPUTE
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="대형 프로젝트를 빌드할 때 노트북이 뜨거워지며 멈추던 경험이 있으실 겁니다. Antigravity IDE는 클라우드의 강력한 자원을 끌어다 쓰므로 빌드 시간이 몇 분에서 몇 초 단위로 단축됩니다.">
-        <div class="tag tag-green">🚀 Killer Feature 03</div>
-        <h2 class="slide-title">클라우드 <span>엘라스틱 연산력</span>으로 빌드 속도 혁신</h2>
-        <div class="divider"></div>
-        <div class="two-col" style="flex:1; margin-top:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(248,113,113,.2);">
-              <div class="card-title" style="color:var(--accent-red);">🔴 로컬 빌드 한계</div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">노트북 CPU</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-muted);">4~8 코어</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">대규모 빌드 시간</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">5~15분</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">빌드 중 사용 가능성</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">거의 불가</span>
-                </div>
-              </div>
-            </div>
-            <div class="card" style="border-color:rgba(52,211,153,.2);">
-              <div class="card-title" style="color:var(--accent-green);">🟢 클라우드 엘라스틱 빌드</div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">가상 vCPU</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">32~128 vCPU</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">대규모 빌드 시간</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">20초 ~ 90초</span>
-                </div>
-                <div style="display:flex; align-items:center; gap:12px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); width:160px;">빌드 중 사용 가능성</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">완전 정상 작동</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:center;">
-            <div style="text-align:center;">
-              <div class="stat-num" style="font-size: clamp(calc(60px * var(--font-scale)), 8vw, calc(90px * var(--font-scale)));">10x</div>
-              <div class="stat-label" style="font-size: calc(20px * var(--font-scale));">빌드 속도 향상</div>
-              <div style="margin-top:20px; font-size: calc(20px * var(--font-scale)); color:var(--text-muted); line-height:1.8;">
-                필요 시 즉시 스케일업<br>
-                사용 후 자동 스케일다운<br>
-                <strong style="color:var(--neon-blue);">쓴 만큼만 과금</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 24: SNAPSHOT
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="퇴근할 때 작업하던 화면 그대로 스냅샷을 찍고, 집에 가서 태블릿이나 다른 PC로 접속하면 터미널 커맨드라인 내역까지 그대로 살아있는 놀라운 경험을 제공합니다.">
-        <div class="tag tag-green">💾 Killer Feature 04</div>
-        <h2 class="slide-title">무중단 <span>스냅샷</span> 및 개발 세션 하이재킹</h2>
-        <div class="divider"></div>
-        <div class="two-col" style="flex:1; margin-top:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(56,189,248,.2);">
-              <div class="card-title">스냅샷에 보존되는 항목</div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-                <div class="hl-row"><span>📝</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">편집 중인 파일 &
-                    커서 위치</span></div>
-                    <br>
-                <div class="hl-row"><span>📟</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">터미널 세션 &
-                    명령어 히스토리</span></div>
-                    <br>
-                <div class="hl-row"><span>🌍</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">실행 중인 Dev
-                    서버 프로세스</span></div>
-                    <br>
-                <div class="hl-row"><span>🔍</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">열려있는 탭 &
-                    파일 탐색기 상태</span></div>
-                    <br>
-                <div class="hl-row"><span>🔧</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">브레이크포인트 &
-                    디버거 설정</span></div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-            <div style="display:flex; flex-direction:column; gap:12px;">
-              <div
-                style="padding:14px; background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.2); border-radius:10px; display:flex; gap:12px; align-items:center;">
-                <span style="font-size: calc(24px * var(--font-scale));">💻</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">사무실 노트북 — 18:00 퇴근</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">작업 중 스냅샷 자동 저장</div>
-                </div>
-              </div>
-              <div style="text-align:center; color:var(--cyan); font-size: calc(22px * var(--font-scale));">↓ 클라우드에 1초 저장</div>
-              <div
-                style="padding:14px; background:rgba(52,211,153,.07); border:1px solid rgba(52,211,153,.2); border-radius:10px; display:flex; gap:12px; align-items:center;">
-                <span style="font-size: calc(24px * var(--font-scale));">📱</span>
-                <div>
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary);">집의 iPad — 21:00 재접속</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green);">정확히 같은 화면에서 즉시 계속</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 25: SECURITY (ENTERPRISE)
-══════════════════════════════════════════ -->
-      <div class="slide" data-note="보안 팀 입장에서도 혁신적입니다. 노트북을 분실해도 클라우드 접속 권한만 차단하면 소스코드가 유출될 위험이 원천적으로 차단되기 때문입니다.">
-        <div class="tag">🔐 Enterprise Security</div>
-        <h2 class="slide-title">소스코드 <span>로컬 유출</span> 원천 차단</h2>
-        <div class="divider"></div>
-        <div class="two-col" style="flex:1; margin-top:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="arch-box" data-label="코드 격리 아키텍처" style="padding-top:24px;">
-              <div style="display:flex; flex-direction:column; gap:8px;">
-                <div
-                  style="padding:10px; background:rgba(52,211,153,.07); border-radius:8px; border:1px solid rgba(52,211,153,.2); font-size: calc(20px * var(--font-scale)); text-align:center;">
-                  <div style="color:var(--accent-green); font-weight:700;">☁️ 보안 VPC 내 원격 컨테이너</div>
-                  <div style="color:var(--text-muted); margin-top:4px;">소스코드 100% 상주 위치</div>
-                </div>
-                <div style="text-align:center; color:var(--accent-red); font-size: calc(20px * var(--font-scale));">🚫</div>
-                <div
-                  style="padding:10px; background:rgba(248,113,113,.07); border-radius:8px; border:1px solid rgba(248,113,113,.2); font-size: calc(20px * var(--font-scale)); text-align:center;">
-                  <div style="color:var(--accent-red); font-weight:700;">💻 개발자 로컬 디스크</div>
-                  <div style="color:var(--text-muted); margin-top:4px;">코드 다운로드(Git Clone) 불허</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(56,189,248,.2);">
-              <div class="card-title">보안 사고 시나리오 비교</div>
-              <div style="margin-top:8px; display:flex; flex-direction:column; gap:10px;">
-                <div
-                  style="padding:10px 14px; border-radius:8px; background:rgba(248,113,113,.05); border:1px solid rgba(248,113,113,.15);">
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red); margin-bottom:4px;">🔴 기존: 노트북
-                    분실 시</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">로컬 코드 + DB 자격증명 + API 키 전부 유출 위험</div>
-                </div>
-                <div
-                  style="padding:10px 14px; border-radius:8px; background:rgba(52,211,153,.05); border:1px solid rgba(52,211,153,.15);">
-                  <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green); margin-bottom:4px;">🟢
-                    Antigravity: 노트북 분실 시</div>
-                  <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted);">관리자 콘솔에서 접속 권한 즉시 차단 → 피해 Zero</div>
-                </div>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-title">기업 보안 컴플라이언스</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.65; margin-top:4px;">ISO 27001 /
-                SOC 2 Type II / GDPR 요구사항 충족. <strong style="color:var(--text-primary);">감사 로그 자동 생성</strong>으로 누가 언제
-                무엇을 편집했는지 완전 추적 가능.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 26: TCO
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="하드웨어 교체 주기에 목돈을 쓰는 대신, 개발자들의 필요에 따라 클라우드 인프라 사양을 유연하게 늘리거나 줄일 수 있어 기업의 TCO가 대폭 절감됩니다.">
-        <div class="tag">💰 ROI Analysis</div>
-        <h2 class="slide-title">개발 비용 최적화와 <span>TCO 절감</span> 경제학</h2>
-        <div class="divider"></div>
-        <div class="two-col" style="flex:1; margin-top:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(248,113,113,.2);">
-              <div class="card-title" style="color:var(--accent-red);">🔴 기존 하드웨어 투자 구조</div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(248,113,113,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">맥북 프로 M3 (1인)</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">₩ 4,000,000</span>
-                </div>
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(248,113,113,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">교체 주기 (3~4년)</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">일괄 대량 구매</span>
-                </div>
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(248,113,113,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">IT 자산 관리 비용</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-red);">별도 발생</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(52,211,153,.2);">
-              <div class="card-title" style="color:var(--accent-green);">🟢 클라우드 구독 전환 구조</div>
-              <div style="display:flex; flex-direction:column; gap:8px; margin-top:6px;">
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(52,211,153,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">저사양 디바이스 (1인)</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">₩ 800,000</span>
-                </div>
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(52,211,153,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">클라우드 IDE 구독 (월)</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">~$39/월</span>
-                </div>
-                <div
-                  style="display:flex; justify-content:space-between; padding:8px 12px; background:rgba(52,211,153,.05); border-radius:6px;">
-                  <span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">사양 조정</span>
-                  <span style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--accent-green);">실시간 탄력 조정</span>
-                </div>
-              </div>
-            </div>
-            <div
-              style="text-align:center; padding:16px; background:rgba(52,211,153,.06); border:1px solid rgba(52,211,153,.2); border-radius:10px;">
-              <div style="font-size: calc(32px * var(--font-scale)); font-weight:900; color:var(--accent-green);">~40% TCO 절감</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:4px;">3년 기준 50인 개발팀 추정</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 27: ROADMAP
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="당장 내일부터 전사 환경을 바꿀 수는 없습니다. 리스크가 적은 신규 파일럿 프로젝트나 웹 프론트엔드 파트부터 적용해 보며 성공 방정식을 쌓아가는 것이 좋습니다.">
-        <div class="tag">📋 Migration Roadmap</div>
-        <h2 class="slide-title">위험 부담 없는 <span>점진적 마이그레이션</span> 전략</h2>
-        <div class="divider"></div>
-        <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:14px; margin-top:16px;">
-          <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
-            <div class="card" style="border-color:rgba(56,189,248,.2); text-align:center;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--cyan); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;">
-                Phase 1 · Month 1-2</div>
-              <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:8px;">🧪</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary); margin-bottom:6px;">파일럿 프로젝트</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); line-height:1.5;">신규 프론트엔드 프로젝트 1개 선정, 소규모 2~3인 팀 선도
-                적용</div>
-            </div>
-            <div class="card" style="border-color:rgba(56,189,248,.3); text-align:center;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--neon-blue); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;">
-                Phase 2 · Month 3-4</div>
-              <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:8px;">📊</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary); margin-bottom:6px;">성과 측정</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); line-height:1.5;">온보딩 시간, 빌드 속도, 개발자 만족도 KPI 수집 및 공유
-              </div>
-            </div>
-            <div class="card" style="border-color:rgba(52,211,153,.2); text-align:center;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;">
-                Phase 3 · Month 5-8</div>
-              <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:8px;">🌱</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary); margin-bottom:6px;">팀 단위 확산</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); line-height:1.5;">신규 프로젝트 전체 및 MSA 백엔드 서비스로 확장 적용
-              </div>
-            </div>
-            <div class="card" style="border-color:rgba(52,211,153,.3); text-align:center;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--accent-green); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;">
-                Phase 4 · Month 9+</div>
-              <div style="font-size: calc(28px * var(--font-scale)); margin-bottom:8px;">🏢</div>
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-primary); margin-bottom:6px;">전사 표준화</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); line-height:1.5;">전사 개발 환경 표준 정책 수립 및 레거시 로컬 환경 단계적
-                폐기</div>
-            </div>
-          </div>
-          <div class="card" style="border-color:rgba(56,189,248,.2); background:rgba(56,189,248,.04);">
-            <p style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); text-align:center; line-height:1.6;">
-              <strong style="color:var(--neon-blue);">핵심 원칙:</strong> 레거시 시스템을 강제 전환하지 않고,
-              <strong style="color:var(--text-primary);">신규 프로젝트부터 성공 사례를 만들어 자연스럽게 확산</strong>하는 전략
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 28: LATENCY
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="클라우드 IDE라고 하면 타이핑이 밀리지 않을까 걱정하십니다. Antigravity IDE는 지리적으로 가장 가까운 리전을 자동으로 선택하고, 브라우저단 낙관적 렌더링 기술을 통해 이 문제를 완벽히 해결했습니다.">
-        <div class="tag">⚡ Troubleshooting</div>
-        <h2 class="slide-title">네트워크 지연(Latency) <span>극복 기술</span></h2>
-        <div class="divider"></div>
-        <div class="two-col" style="flex:1; margin-top:20px;">
-          <div style="display:flex; flex-direction:column; gap:14px;">
-            <div class="card">
-              <div class="card-title">기술 1: 낙관적 UI 업데이트</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.6; margin-bottom:12px;">키 입력을 서버 확인
-                없이 <strong style="color:var(--text-primary);">브라우저에서 즉시 화면에 반영</strong>. 서버와 미세한 차이 발생 시 백그라운드에서 조용히
-                동기화.</div>
-              <div class="code-block" style="font-size: calc(20px * var(--font-scale));">
-                <span class="cm">// Optimistic Update 패턴</span><br>
-                <span class="fn">onKeyPress</span>(<span class="at">key</span>) {<br>
-                &nbsp;&nbsp;<span class="fn">renderLocal</span>(<span class="at">key</span>); <span class="cm">// 즉시 화면
-                  반영</span><br>
-                &nbsp;&nbsp;<span class="fn">syncToServer</span>(<span class="at">key</span>); <span class="cm">// 비동기
-                  전송</span><br>
-                }
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-title">기술 2: 자동 최적 리전 매핑</div>
-              <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-                <div class="hl-row"><span>🇰🇷</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">한국 → AWS
-                    ap-northeast-2 Seoul <strong style="color:var(--accent-green);">&lt; 8ms</strong></span></div>
-                <div class="hl-row"><span>🇯🇵</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">일본 → GCP
-                    asia-northeast1 Tokyo <strong style="color:var(--accent-green);">&lt; 12ms</strong></span></div>
-                <div class="hl-row"><span>🌍</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">유럽 → AWS
-                    eu-west-1 Ireland <strong style="color:var(--accent-green);">&lt; 20ms</strong></span></div>
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:14px; justify-content:center;">
-            <div
-              style="text-align:center; padding:28px; background:rgba(56,189,248,.05); border:1px solid rgba(56,189,248,.2); border-radius:12px;">
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-bottom:8px;">체감 타이핑 레이턴시</div>
-              <div
-                style="font-size: calc(72px * var(--font-scale)); font-weight:900; line-height:1; background:linear-gradient(135deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
-                &lt; 8<span style="font-size: calc(40px * var(--font-scale));">ms</span></div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); margin-top:10px;">인간이 인지 가능한 최소 단위<br><strong
-                  style="color:var(--neon-blue);">(16ms)</strong>보다 빠름</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 29: FUTURE VISION
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="앞으로는 개발자가 인프라 사양조차 고민하지 않을 것입니다. 내가 짜는 코드의 아키텍처를 AI가 인식하고 클라우드 자원을 알아서 셋업해 주는 시대로 가고 있습니다.">
-        <div class="tag">🔭 Future Vision</div>
-        <h2 class="slide-title">인프라와 AI가 <span>완전 융합</span>된 코드리스 엔지니어링</h2>
-        <div class="divider"></div>
-        <div style="flex:1; margin-top:24px; display:flex; gap:20px;">
-          <div style="flex:1; display:flex; flex-direction:column; gap:14px;">
-            <div class="card" style="border-color:rgba(56,189,248,.2);">
-              <div class="card-title">AI 자동 프로비저닝 시나리오</div>
-              <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
-                <div class="step">
-                  <div class="step-num" style="font-size: calc(20px * var(--font-scale));">1</div>
-                  <div class="step-body">
-                    <h4>개발자가 코드 작성</h4>
-                    <p>데이터베이스 스키마 파일 작성 시작</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <div class="step-num" style="font-size: calc(20px * var(--font-scale));">2</div>
-                  <div class="step-body">
-                    <h4>AI가 의도 실시간 인식</h4>
-                    <p>트래픽 패턴 분석 → PostgreSQL RDS 필요 감지</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <div class="step-num" style="font-size: calc(20px * var(--font-scale));">3</div>
-                  <div class="step-body">
-                    <h4>클라우드 인프라 자동 프로비저닝</h4>
-                    <p>Terraform 코드 자동 생성 → 승인 원클릭으로 배포</p>
-                  </div>
-                </div>
-                <div class="step">
-                  <div class="step-num" style="font-size: calc(20px * var(--font-scale));">4</div>
-                  <div class="step-body">
-                    <h4>개발자는 비즈니스 로직만</h4>
-                    <p>인프라는 AI가 알아서 관리 및 최적화</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div style="flex:1; display:flex; flex-direction:column; gap:14px; justify-content:center;">
-            <div
-              style="padding:28px; background:linear-gradient(135deg,rgba(56,189,248,.07),rgba(6,182,212,.03)); border:1px solid rgba(56,189,248,.2); border-radius:12px; text-align:center;">
-              <div style="font-size: calc(40px * var(--font-scale)); margin-bottom:16px;">🌌</div>
-              <div
-                style="font-size: calc(20px * var(--font-scale)); font-weight:800; color:var(--text-primary); margin-bottom:12px; line-height:1.3;">
-                코드를 짜면<br>인프라가 따라온다</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary); line-height:1.7;">
-                Serverless, Kubernetes, DB, CDN...<br>
-                개발자는 <strong style="color:var(--neon-blue);">비즈니스 로직</strong>에만 집중.<br>
-                나머지는 AI가 최적화.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════
-  SLIDE 30: CLOSING
-══════════════════════════════════════════ -->
-      <div class="slide"
-        data-note="50분 동안 경청해 주셔서 감사합니다. 질문이 있으신 분은 편하게 말씀해 주시기 바랍니다. 이어서 진행될 세션 2에서는 이 인프라 위에서 키보드만으로 날아다니는 실전 CLI 코딩 기법을 다루니 많은 기대 부탁드립니다.">
-        <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center;">
-          <div>
-            <div
-              style="font-size: calc(20px * var(--font-scale)); font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--cyan); margin-bottom:20px; display:flex; align-items:center; gap:10px;">
-              <span
-                style="width:32px;height:1px;background:linear-gradient(90deg,var(--cyan),transparent);display:inline-block;"></span>
-              SESSION 01 WRAP-UP
-            </div>
-            <h2
-              style="font-size: clamp(calc(28px * var(--font-scale)), 3.5vw, calc(48px * var(--font-scale))); font-weight:900; line-height:1.2; letter-spacing:-.03em; margin-bottom:20px;">
-              도구를 바꾸면<br>
-              <span
-                style="background:linear-gradient(90deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">개발
-                문화가 바뀝니다.</span>
-            </h2>
-            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:28px;">
-              <div class="hl-row"><span>🧠</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">AI 코딩으로
-                  <strong style="color:var(--text-primary);">인지 부하 감소</strong>, 생산성 폭발</span></div>
-              <div class="hl-row"><span>🔍</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">LLM은 확률적 예측.
-                  <strong style="color:var(--text-primary);">컨텍스트가 품질 결정</strong></span></div>
-              <div class="hl-row"><span>💻</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">로컬 환경의 한계는
-                  <strong style="color:var(--text-primary);">구조적 문제</strong></span></div>
-              <div class="hl-row"><span>☁️</span><span style="font-size: calc(20px * var(--font-scale)); color:var(--text-secondary);">Antigravity
-                  IDE로 <strong style="color:var(--text-primary);">중력(로컬 제약)에서 해방</strong></span></div>
-            </div>
-            <div
-              style="padding:16px 20px; background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.2); border-radius:10px;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--cyan); font-weight:700; margin-bottom:4px; text-transform:uppercase; letter-spacing:.1em;">
-                Next: Session 02</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-primary); font-weight:600;">플러그인 & CLI 실전 코딩</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:4px;">키보드만으로 날아다니는 Antigravity 실전 워크플로우
-              </div>
-            </div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:20px; align-items:center;">
-            <div
-              style="text-align:center; padding:32px; background:var(--bg-card); border:1px solid var(--bg-border); border-radius:16px; width:100%;">
-              <div style="font-size: calc(20px * var(--font-scale)); font-weight:700; color:var(--text-secondary); margin-bottom:20px;">Q&A</div>
-              <div
-                style="font-size: calc(48px * var(--font-scale)); font-weight:900; letter-spacing:-.04em; background:linear-gradient(135deg,var(--neon-blue),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text; line-height:1.1;">
-                질문 받습니다</div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:12px;">편하게 말씀해 주세요</div>
-            </div>
-            <div
-              style="border:1px solid var(--bg-border); border-radius:12px; padding:20px; width:100%; text-align:center;">
-              <div
-                style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:.1em;">
-                Session Feedback QR</div>
-              <div
-                style="width:100px; height:100px; background:var(--bg-elevated); border:1px dashed var(--bg-border); border-radius:8px; margin:0 auto; display:flex; align-items:center; justify-content:center;">
-                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:3px;">
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--bg-elevated);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--bg-elevated);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--bg-elevated);border-radius:1px;"></div>
-                  <div style="width:8px;height:8px;background:var(--text-muted);border-radius:1px;"></div>
-                </div>
-              </div>
-              <div style="font-size: calc(20px * var(--font-scale)); color:var(--text-muted); margin-top:10px;">피드백 링크 QR 자리</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- #slides -->
-
-    <!-- NAV -->
-    <div id="nav">
-      <button onclick="prev()" title="이전 (←)">&#8592;</button>
-      <span id="slide-counter">1 / 30</span>
-      <button onclick="next()" title="다음 (→)">&#8594;</button>
-    </div>
-
-    <!-- NOTES PANEL -->
-    <div id="notes-panel">
-      <strong>🎤 Speaker Notes</strong>
-      <span id="notes-text"></span>
-    </div>
-
-    <script>
-      const slides = document.querySelectorAll('.slide');
-      const total = slides.length;
-      let current = 0;
-      let notesVisible = false;
-
+  <script>
+    (() => {
+      const deck = document.getElementById('deck');
+      const slides = [...document.querySelectorAll('.slide')];
       const counter = document.getElementById('slide-counter');
       const progress = document.getElementById('progress');
-      const notesPanel = document.getElementById('notes-panel');
-      const notesText = document.getElementById('notes-text');
+      const prevButton = document.getElementById('prev');
+      const nextButton = document.getElementById('next');
+      let current = 0;
 
-      function goTo(n) {
-        if (n < 0 || n >= total) return;
-        slides[current].classList.remove('active');
-        slides[current].classList.add('exit');
-        setTimeout(() => { slides[current].classList.remove('exit'); }, 400);
-        current = n;
-        slides[current].classList.add('active');
-        counter.textContent = `${current + 1} / ${total}`;
-        progress.style.width = `${((current + 1) / total) * 100}%`;
-        if (notesVisible) updateNotes();
+      const clamp = (value) => Math.max(0, Math.min(slides.length - 1, value));
+
+      function render(index, updateHash = true) {
+        current = clamp(index);
+        slides.forEach((slide, i) => {
+          const active = i === current;
+          slide.classList.toggle('active', active);
+          slide.setAttribute('aria-hidden', String(!active));
+        });
+        counter.textContent = `${current + 1} / ${slides.length}`;
+        progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+        prevButton.disabled = current === 0;
+        nextButton.disabled = current === slides.length - 1;
+        document.title = `${slides[current].dataset.title} — Google Antigravity IDE`;
+        if (updateHash) history.replaceState(null, '', `#${current + 1}`);
       }
 
-      function next() { goTo(current + 1); }
-      function prev() { goTo(current - 1); }
+      function move(delta) { render(current + delta); }
 
-      function updateNotes() {
-        const note = slides[current].getAttribute('data-note') || '';
-        notesText.textContent = note;
-      }
+      prevButton.addEventListener('click', () => move(-1));
+      nextButton.addEventListener('click', () => move(1));
 
-      function toggleNotes() {
-        notesVisible = !notesVisible;
-        notesPanel.classList.toggle('visible', notesVisible);
-        if (notesVisible) updateNotes();
-      }
-
-      document.addEventListener('keydown', e => {
-        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
-        else if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
-        else if (e.key === 'n' || e.key === 'N') toggleNotes();
-        else if (e.key === 'f' || e.key === 'F') {
-          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+      document.addEventListener('keydown', (event) => {
+        if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
+          event.preventDefault();
+          move(1);
+        } else if (['ArrowLeft', 'PageUp'].includes(event.key)) {
+          event.preventDefault();
+          move(-1);
+        } else if (event.key === 'Home') {
+          event.preventDefault();
+          render(0);
+        } else if (event.key === 'End') {
+          event.preventDefault();
+          render(slides.length - 1);
+        } else if (event.key.toLowerCase() === 'n') {
+          deck.classList.toggle('show-notes');
+        } else if (event.key.toLowerCase() === 'f') {
+          if (!document.fullscreenElement) deck.requestFullscreen?.();
           else document.exitFullscreen?.();
         }
       });
 
-      // Touch swipe
-      let touchStartX = 0;
-      document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
-      document.addEventListener('touchend', e => {
-        const dx = touchStartX - e.changedTouches[0].clientX;
-        if (Math.abs(dx) > 50) { dx > 0 ? next() : prev(); }
+      let touchStartX = null;
+      deck.addEventListener('touchstart', (event) => { touchStartX = event.changedTouches[0].clientX; }, { passive: true });
+      deck.addEventListener('touchend', (event) => {
+        if (touchStartX === null) return;
+        const distance = event.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(distance) > 50) move(distance < 0 ? 1 : -1);
+        touchStartX = null;
+      }, { passive: true });
+
+      window.addEventListener('hashchange', () => {
+        const requested = Number(location.hash.slice(1)) - 1;
+        if (Number.isInteger(requested)) render(requested, false);
       });
 
-      // Init
-      progress.style.width = `${(1 / total) * 100}%`;
-    </script>
+      const initial = Number(location.hash.slice(1)) - 1;
+      render(Number.isInteger(initial) ? initial : 0, false);
+    })();
+  </script>
 </body>
-
 </html>
-
-
-

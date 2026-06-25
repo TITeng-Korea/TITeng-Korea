@@ -220,7 +220,7 @@ git revert &lt;commit-hash&gt;</code></pre>
                 <li>되돌릴 가능성이 있는 작업일수록 브랜치와 작은 커밋 단위가 중요합니다.</li>
             </ul>
 
-            <a href="../topic2/topic2.html" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+            <a href="../topic2/topic2.html" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
                 <span>슬라이드 열기</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
@@ -228,44 +228,59 @@ git revert &lt;commit-hash&gt;</code></pre>
     },
     {
         id: 17,
-        title: "AI 코딩 패러다임과 차세대 클라우드 개발 환경",
+        title: "Google Antigravity IDE: 에이전트 중심 개발의 실제",
         category: "report",
         categoryKo: "기술 리포트",
         badgeClass: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-900",
         author: "성현진 엔지니어 (개발 생산성)",
         date: "2026.06.18",
-        readTime: "읽는 시간 15분",
-        summary: "AI 코딩 패러다임 전환, LLM의 문맥 처리 방식, 로컬 개발 환경의 구조적 한계, Antigravity IDE형 클라우드 개발 환경 아키텍처를 정리한 기술 리포트입니다.",
-        tags: ["AI Coding", "LLM", "Cloud IDE", "Antigravity", "WASM"],
+        readTime: "읽는 시간 10분",
+        summary: "Google Antigravity IDE의 Agent Manager, Artifacts, 브라우저 검증 기능과 실무 사용 흐름을 살펴보고, 최신 VS Code의 에이전트 기능과 차이 및 도구 선택 기준을 정리합니다.",
+        tags: ["AI Coding", "Antigravity", "Agent Manager", "Artifacts", "VS Code"],
         content: `
             <h3>리포트 개요</h3>
-            <p>이 리포트는 AI 코딩이 개발 인터페이스를 어떻게 바꾸고 있는지, 그리고 그 변화가 왜 클라우드 기반 개발 환경으로 이어지는지를 하나의 흐름으로 정리합니다. 검색과 복사·붙여넣기 중심의 작업 방식에서, IDE 안에서 AI와 대화하며 문맥을 유지하는 방식으로 이동하는 배경을 다룹니다.</p>
+            <p>Google Antigravity IDE는 개발자가 모든 코드를 직접 입력하는 방식에서 벗어나, 목표와 완료 기준을 정의하고 여러 에이전트의 작업 과정과 검증 근거를 관리하는 에이전트 중심 개발 환경입니다. 이 리포트는 Antigravity의 핵심 기능과 실제 사용 흐름을 살펴보고, 최신 Visual Studio Code의 에이전트 기능과 무엇이 다른지 공정하게 비교합니다.</p>
 
-            <h3>핵심 질문</h3>
+            <h3>Antigravity IDE란 무엇인가</h3>
             <ul>
-                <li>AI 코딩은 왜 기존 개발 생산성 구조를 바꾸는가</li>
-                <li>LLM은 어떤 방식으로 코드를 예측하고 문맥을 소비하는가</li>
-                <li>로컬 개발 환경은 왜 점점 병목이 되는가</li>
-                <li>차세대 클라우드 IDE는 어떤 아키텍처를 가져야 하는가</li>
+                <li>Google이 제공하는 에이전트 중심 개발 플랫폼의 IDE 제품입니다.</li>
+                <li>코드 편집기와 함께 Agent Manager, Artifacts, 코드베이스 이해 기능을 통합합니다.</li>
+                <li>에이전트가 편집기, 터미널, 브라우저를 사용해 계획·구현·검증을 수행합니다.</li>
+                <li>Antigravity 플랫폼에는 CLI와 SDK도 있지만, 여기서는 IDE 작업 경험에 집중합니다.</li>
             </ul>
 
-            <h3>주요 내용</h3>
+            <h3>세 가지 핵심 특징</h3>
             <ul>
-                <li><strong>개발 패러다임 시프트</strong>: Stack Overflow 검색과 복붙 중심 흐름에서, IDE 내 인라인 대화와 즉시 패치 적용 흐름으로 전환됩니다.</li>
-                <li><strong>LLM과 Context Window</strong>: 모델은 코드를 이해한다기보다 확률적으로 예측하며, 어떤 문맥을 주느냐가 결과 품질을 좌우합니다.</li>
-                <li><strong>레거시 로컬 개발의 한계</strong>: 환경 파편화, 느린 빌드, 디바이스 성능 편차, 보안 리스크가 구조적으로 커집니다.</li>
-                <li><strong>Antigravity IDE 아키텍처</strong>: 원격 컨테이너, WASM 기반 클라이언트, 스냅샷 복구, 보안 VPC, 저지연 동기화가 결합된 형태를 설명합니다.</li>
+                <li><strong>Agent Manager</strong>: 여러 작업 공간과 에이전트의 상태를 한 화면에서 관리합니다. 독립적인 작업은 병렬로 맡기고, 필요한 순간 Editor View로 전환해 직접 개입할 수 있습니다.</li>
+                <li><strong>Artifacts</strong>: 계획, 작업 목록, 변경 결과, 테스트 결과, 스크린샷과 영상 같은 검증 근거를 남깁니다. 정확성을 보장하는 기능이 아니라 사람이 판단할 수 있도록 관찰 가능성을 높이는 장치입니다.</li>
+                <li><strong>브라우저 검증과 시각적 피드백</strong>: 에이전트가 Chrome에서 페이지를 탐색하고 상호작용하며 결과를 검증합니다. Visual Artifact의 특정 위치에 코멘트를 남겨 수정 범위를 구체적으로 전달할 수 있습니다.</li>
             </ul>
 
-            <h3>실무 관점 포인트</h3>
+            <h3>설치 후 첫 작업 흐름</h3>
+            <ol>
+                <li>공식 페이지에서 운영체제에 맞는 IDE를 설치하고 계정 또는 조직 인증으로 로그인합니다.</li>
+                <li>프로젝트를 연 뒤 Agent Permissions, Secure Mode, Sandbox 관련 설정을 확인합니다.</li>
+                <li>목표, 파일 범위, 제약조건, 완료 기준, 검증 방법이 포함된 요청을 작성합니다.</li>
+                <li>에이전트가 만든 Plan Artifact와 권한 요청을 검토한 뒤 구현을 승인합니다.</li>
+                <li>변경 diff, 테스트 결과, 브라우저 검증 Artifact를 확인하고 구체적으로 피드백합니다.</li>
+                <li>사람이 최종 테스트와 Git 상태를 확인한 뒤 커밋 또는 PR 단계로 넘깁니다.</li>
+            </ol>
+
+            <h3>최신 VS Code와의 차이</h3>
+            <p>최신 VS Code 역시 Agents window와 Chat view를 통해 계획, 여러 파일 편집, 명령 실행, 테스트와 자기 수정이 가능한 에이전트형 개발을 지원합니다. 따라서 두 도구의 차이는 에이전트 기능의 가능 여부보다 기본 작업 철학과 생태계에서 찾아야 합니다.</p>
             <ul>
-                <li>AI 코딩 도입은 단순 자동완성 추가가 아니라 개발 워크플로우 전체 재설계 문제입니다.</li>
-                <li>좋은 결과를 얻으려면 모델 성능보다 문맥 전달 방식과 세션 유지 전략이 중요합니다.</li>
-                <li>클라우드 IDE는 성능뿐 아니라 보안, 자산 관리, 온보딩 속도, 복구성을 같이 개선할 수 있습니다.</li>
-                <li>도입은 전면 교체보다 신규 프로젝트 파일럿과 단계적 확산이 현실적입니다.</li>
+                <li><strong>Antigravity IDE</strong>: Agent Manager, Artifacts, 브라우저 사용과 시각적 피드백을 전면에 둔 에이전트 관제·검증 중심 환경입니다.</li>
+                <li><strong>VS Code</strong>: 범용 편집기에 에이전트 기능을 통합하며, 확장 마켓과 언어·디버깅 도구, 다양한 모델 및 에이전트 선택 폭이 강점입니다.</li>
+                <li>두 도구 모두 권한 제어, 컨텍스트 관리, diff와 테스트 결과에 대한 사람의 검토가 필요합니다.</li>
             </ul>
 
-            <a href="../topic3/topic3.html" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+            <h3>어떤 도구를 선택할 것인가</h3>
+            <p>병렬 에이전트 작업, Artifact 기반 리뷰, 웹·풀스택의 브라우저 검증을 기본 흐름으로 사용하려면 Antigravity가 잘 맞습니다. 기존 확장, 디버거, Dev Container, 조직 표준과 폭넓은 도구 선택이 중요하다면 VS Code가 적합합니다. 실제 도입 전에는 작은 과제를 두 도구에서 동일한 완료 기준으로 수행해 품질, 시간, 검토 부담을 함께 측정하는 것이 좋습니다.</p>
+
+            <h3>결론</h3>
+            <p>에이전트 중심 개발에서 중요한 능력은 코드를 더 빨리 생성하는 것이 아니라, 작업을 작게 분해하고 최소 권한을 설정하며 에이전트가 남긴 증거를 검토하는 능력입니다. 도구의 우열보다 팀의 저장소, 보안 정책, 리뷰 방식에 맞는 기본 작업 흐름을 선택해야 합니다.</p>
+
+            <a href="../topic3/topic3.html" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
                 <span>슬라이드 열기</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
@@ -311,7 +326,7 @@ git revert &lt;commit-hash&gt;</code></pre>
                 <li>도구 선택보다 중요한 것은 계획, 검증, 권한 관리가 포함된 운영 workflow입니다.</li>
             </ul>
 
-            <a href="../topic4/topic4.html" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+            <a href="../topic4/topic4.html" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
                 <span>슬라이드 열기</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
