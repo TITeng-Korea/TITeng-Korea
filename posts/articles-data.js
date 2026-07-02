@@ -856,5 +856,61 @@ PIN Block: 04 12 71 98 76 FE DC BA  ← XOR 결과, 3DES/AES로 암호화 전송
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
         `
+    },
+    {
+        id: 24,
+        title: "TNP20 HW 기술 검토: MAX32560 기반 통합 보안 시스템 보드 분석",
+        category: "hw",
+        categoryKo: "H/W 엔지니어링",
+        badgeClass: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-900",
+        author: "성현진 연구원 (모듈개발팀)",
+        date: "2026.07.02",
+        readTime: "읽는 시간 10분",
+        summary: "TNP20 HW는 MAX32560 중심의 제어, Flash/Secure Box 저장·보안, NFC/UART/USB 통신, LED 상태 표시, 메인·백업 전원까지 한 장의 PCB에 통합한 보안 시스템 보드입니다. 블록별 역할과 상호의존성, 기술 검토 시 우선 확인할 리스크를 정리합니다.",
+        tags: ["TNP20", "MAX32560", "SecureBox", "NFC", "PowerDesign", "Hardware"],
+        content: `
+            <h3>TNP20 HW 개요</h3>
+            <p>TNP20 HW는 단일 기능 보드가 아니라, 제어·저장·보안·통신·전원 블록이 한 장의 PCB 위에서 상호의존적으로 동작하는 통합형 보안 시스템 보드입니다. 중앙 제어부인 <strong>MAX32560</strong>을 중심으로 외부 Flash, 물리 보안(Secure Box), NFC/UART/USB 통신, LED 상태 표시, 메인·백업 전원이 하나의 신호 체계로 묶여 있습니다.</p>
+
+            <h3>중앙 제어부: MAX32560</h3>
+            <p>MAX32560은 보드 전체 동작을 묶는 중앙 제어부로, 12MHz 클럭이 일반 동작의 기준을, 32.768kHz 클럭이 저전력 모드의 기준을 제공합니다. 리셋 품질은 부팅 재현성과 직결되며, JTAG/USB는 디버그와 초기 검증 경로로 연결됩니다. MCU 검토의 핵심은 성능 수치가 아니라 클럭·리셋·전원 분리·디버그 접근성이 모두 같은 조건 묶음으로 정상 동작하는지 확인하는 것입니다.</p>
+
+            <h3>저장과 물리 보안</h3>
+            <p>외부 Flash(W25Q128JVPIM)는 QSPI로 연결되어 코드·설정·데이터를 저장하는 동시에 Secure Box 정책과도 연동됩니다. 물리 보안은 tamper switch와 mesh pattern(TAM3/TAM5)으로 구성되어 개봉·절단·우회 시도를 감지한 뒤 Secure Box가 이를 차단합니다. 저장 구조와 보안 구조는 분리해서 볼 수 없는 하나의 체계입니다.</p>
+
+            <h3>통신: NFC · UART · USB</h3>
+            <p>NFC는 PN5180 제어 칩이 MCU와 SPI로 연결되고, RF Matching과 안테나, EMC Filter가 이어지는 RF 체인 전체로 성능이 결정됩니다. 특히 <code>RF_PWR_ON</code>은 <span class="mono">LOW = RF POWER ON</span> 극성 주의가 필요합니다. UART0/1은 내부 디버그용, USB_DP/USB_DM은 외부 호스트 연결용으로 역할이 구분되며, 차동 배선 품질과 ESD 보호가 안정성의 핵심입니다.</p>
+
+            <h3>전원: 메인 레일과 백업 배터리</h3>
+            <p>VDD_EXT 입력이 TPS61252DSG를 거쳐 5V·3.3V 레일을 생성하고, <code>PWR_GOOD</code> 신호가 레일 정상 여부를 알립니다. 전원이 상실되면 CR2032 배터리와 TPS3619-33DGK 감시 IC가 VBAT·PFO·RESET 신호로 저전력 백업 모드를 유지합니다. 전원 구조는 수치보다 "어느 레일이 먼저 살아야 하는지"의 순서가 검토의 핵심입니다.</p>
+
+            <div class="my-6 p-4 bg-slate-100 dark:bg-slate-900 rounded-xl border-l-4 border-amber-400">
+                <strong>기술 검토 시 우선 리스크</strong><br>
+                - <strong>전원 안정성</strong>: 모든 블록의 공통 기반이며 증상이 여러 곳으로 퍼질 수 있습니다.<br>
+                - <strong>Tamper 신뢰성</strong>: 오탐지·미탐지 모두 큰 문제로 이어집니다.<br>
+                - <strong>RF 튜닝/매칭</strong>: 칩 단독 검증만으로는 원인을 분리하기 어렵습니다.<br>
+                - <strong>USB 배선/ESD</strong>: 현장 연결 문제와 디버그 장애를 동시에 유발할 수 있습니다.<br>
+                - <strong>백업 전류 가정</strong>: 온도·누설 조건에 따라 유지 시간 해석이 크게 달라집니다.
+            </div>
+
+            <div class="mt-10 mb-6 p-5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl">
+                <p class="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">핵심 약어 정리</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 text-sm text-slate-700 dark:text-slate-300">
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">MCU</code> — 주변 장치를 통합 제어하는 중심 프로세서. 이 보드에서는 MAX32560이 해당</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">QSPI</code> — 고속 외부 Flash 연결에 사용하는 직렬 인터페이스</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">Tamper</code> — 물리 침입, 개봉, 절단 시도를 감지하는 구조 또는 신호 체계</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">Secure Box</code> — 민감 회로나 보안 감지 구조를 보호·연동하는 개념적 보안 영역</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">PWR_GOOD</code> — 전원 레일이 정상 범위에 들어왔음을 알려주는 상태 신호</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">PFO</code> — 전원 이상 또는 저전압 조건을 알려주는 모니터 출력 신호</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">ESD</code> — 정전기 방전에 대한 보호 설계</div>
+                    <div><code class="font-bold text-amber-600 dark:text-amber-400">EMC</code> — 전자파 간섭 억제와 적합성 관점의 설계 기준</div>
+                </div>
+            </div>
+
+            <a href="./hw/tnp20_hw.html" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+                <span>슬라이드 열기</span>
+                <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+            </a>
+        `
     }
 ];

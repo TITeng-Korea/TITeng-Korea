@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="TNP20 HW 기술 검토 발표 슬라이드">
+<title>TNP20 HW 기술 검토</title>
+<style>
+:root{
+  --bg:#07111f;
+  --panel:#101c31;
+  --panel-strong:#182947;
+  --line:rgba(136,166,212,.22);
+  --text:#eef4ff;
+  --muted:#aebbd3;
+  --cyan:#5ee6d8;
+  --blue:#6aa8ff;
+  --amber:#ffcc6b;
+  --green:#71dfb0;
+  --red:#ff7b88;
+}
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0}
+body{
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 12%,rgba(94,230,216,.14),transparent 26%),
+    radial-gradient(circle at 85% 80%,rgba(106,168,255,.15),transparent 28%),
+    #030914;
+  color:var(--text);
+  font-family:Pretendard,"Noto Sans KR",system-ui,sans-serif;
+  word-break:keep-all;
+}
+button{font:inherit}
+code,.mono{font-family:"SFMono-Regular",Consolas,monospace}
+.deck{
+  position:absolute;
+  inset:50% auto auto 50%;
+  width:min(100vw,177.7778vh);
+  height:min(100vh,56.25vw);
+  transform:translate(-50%,-50%);
+  overflow:hidden;
+  background:var(--bg);
+  box-shadow:0 2rem 7rem rgba(0,0,0,.48);
+  font-size:min(1.18vw,2.08vh);
+}
+.deck::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(120,146,187,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(120,146,187,.04) 1px,transparent 1px);
+  background-size:4.25em 4.25em;
+  mask-image:linear-gradient(#000,transparent 90%);
+  pointer-events:none;
+}
+.slide{
+  position:absolute;
+  inset:0;
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  gap:.78em;
+  padding:2.04em 2.5em 2.38em;
+  opacity:0;
+  visibility:hidden;
+  transform:translateX(1.5em);
+  transition:.28s ease;
+  pointer-events:none;
+}
+.slide.active{
+  opacity:1;
+  visibility:visible;
+  transform:none;
+  pointer-events:auto;
+}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:1.45em}
+.eyebrow{margin:0 0 .58em;color:var(--cyan);font-size:.96em;font-weight:900;letter-spacing:.14em;text-transform:uppercase}
+h1,h2,h3,p{margin-top:0}
+h1{margin-bottom:.18em;font-size:5.08em;line-height:.98;letter-spacing:-.05em}
+h2{margin:0;font-size:2.84em;line-height:1.1;letter-spacing:-.04em}
+h3{margin:0 0 .48em;font-size:1.22em}
+.lead{max-width:39em;color:#c8d4e8;font-size:1.22em;line-height:1.52}
+.badge{
+  padding:.55em .9em;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(10,18,36,.76);
+  color:#d7e1f3;
+  font-size:.86em;
+  font-weight:800;
+}
+.accent{
+  color:transparent;
+  background:linear-gradient(90deg,#8cc7ff,#6ee6da 60%,#ffd27b);
+  background-clip:text;
+  -webkit-background-clip:text;
+}
+.content{min-height:0;display:flex;flex-direction:column;justify-content:center}
+.split{display:grid;grid-template-columns:.96fr 1.04fr;gap:.92em;align-items:stretch}
+.stack{display:grid;gap:.66em}
+.grid2,.grid3,.grid4{display:grid;gap:.66em}
+.grid2{grid-template-columns:repeat(2,1fr)}
+.grid3{grid-template-columns:repeat(3,1fr)}
+.grid4{grid-template-columns:repeat(4,1fr)}
+.card{
+  padding:.94em 1.02em;
+  border:1px solid var(--line);
+  border-radius:1em;
+  background:linear-gradient(155deg,rgba(19,31,56,.94),rgba(9,14,28,.9));
+}
+.card p,.card li{color:var(--muted);font-size:.97em;line-height:1.46}
+.card b{color:#f5f8ff}
+.list{margin:0;padding:0;list-style:none}
+.list li{
+  position:relative;
+  margin:0 0 .54em;
+  padding-left:1.25em;
+  color:#d3def0;
+  font-size:1em;
+  line-height:1.42;
+}
+.list li::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:.5em;
+  width:.42em;
+  height:.42em;
+  border-radius:50%;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+}
+.placeholder{
+  display:grid;
+  gap:.7em;
+  height:100%;
+  padding:1.15em;
+  border:1px dashed rgba(255,204,107,.42);
+  border-radius:1.05em;
+  background:linear-gradient(160deg,rgba(59,43,19,.28),rgba(13,17,28,.94));
+}
+.placeholder strong{font-size:1.2em}
+.placeholder ul{margin:0;padding-left:1.08em;color:#e3d5b3;font-size:.98em;line-height:1.58}
+.capture-card{width:100%;min-width:0;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;padding:.4em;border:1px solid rgba(106,168,255,.22);border-radius:1.05em;background:linear-gradient(160deg,rgba(18,31,56,.92),rgba(8,13,24,.96));box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.capture-media{width:auto;height:auto;max-width:100%;max-height:21em;min-width:0;display:flex;align-items:center;justify-content:center;padding:.28em;border:1px solid rgba(157,176,220,.18);border-radius:.86em;background:#f7f9fd;overflow:hidden}
+.capture-media img{display:block;width:100%;height:100%;object-fit:contain}
+.explain-box{
+  padding:.62em .78em;
+  border-left:.22em solid var(--green);
+  border-radius:.45em .8em .8em .45em;
+  color:#d8ebe0;
+  background:rgba(113,223,176,.08);
+  font-size:.96em;
+  line-height:1.46;
+}
+.diagram{
+  display:grid;
+  place-items:center;
+  min-height:100%;
+  padding:.92em;
+  border:1px solid var(--line);
+  border-radius:1em;
+  background:linear-gradient(160deg,rgba(19,31,56,.9),rgba(8,14,28,.95));
+  overflow:hidden;
+}
+.flow-row,.signal-map,.pillars{display:flex;gap:.7em;align-items:center;justify-content:center;flex-wrap:wrap}
+.node{
+  min-width:8.25em;
+  padding:.88em .82em;
+  border:1px solid var(--line);
+  border-radius:.88em;
+  background:rgba(15,24,43,.94);
+  text-align:center;
+}
+.node b{display:block;font-size:.98em}
+.node small{display:block;margin-top:.35em;color:var(--muted);font-size:.8em;line-height:1.42}
+.arrow{color:var(--cyan);font-size:1.72em;font-weight:900}
+.mini-label{
+  display:inline-flex;
+  align-items:center;
+  padding:.34em .6em;
+  border-radius:999px;
+  background:rgba(106,168,255,.12);
+  color:#bed9ff;
+  font-size:.84em;
+  font-weight:800;
+}
+.scope-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.8em}
+.scope-card{padding:1.05em;border:1px solid var(--line);border-radius:1em;background:rgba(16,27,48,.88)}
+.scope-card p{margin:0;color:var(--muted);font-size:.96em;line-height:1.54}
+.scope-card .title{display:block;margin-bottom:.45em;color:#fff;font-size:1.08em;font-weight:900}
+.block-map{
+  display:grid;
+  grid-template-columns:1fr 1.3fr 1fr;
+  gap:.75em;
+  width:100%;
+  align-items:center;
+}
+.block-col{display:grid;gap:.75em}
+.center-node{
+  padding:1.25em 1em;
+  border:1px solid rgba(94,230,216,.34);
+  border-radius:1.1em;
+  background:linear-gradient(155deg,rgba(16,41,64,.98),rgba(13,23,42,.95));
+  text-align:center;
+  box-shadow:0 0 0 1px rgba(94,230,216,.08) inset;
+}
+.center-node b{display:block;font-size:1.14em}
+.center-node small{display:block;margin-top:.38em;color:#bcd5df;font-size:.9em}
+.timeline{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:.7em;
+  width:100%;
+}
+.time-step{
+  position:relative;
+  padding:1em .8em .95em;
+  border:1px solid var(--line);
+  border-radius:.95em;
+  background:rgba(15,25,44,.93);
+}
+.time-step:not(:last-child)::after{
+  content:"→";
+  position:absolute;
+  right:-.62em;
+  top:50%;
+  transform:translate(50%,-50%);
+  color:var(--cyan);
+  font-weight:900;
+}
+.time-step .num{display:inline-block;margin-bottom:.55em;color:var(--blue);font-size:.82em;font-weight:900}
+.time-step b{display:block;font-size:.98em}
+.time-step small{display:block;margin-top:.35em;color:var(--muted);font-size:.82em;line-height:1.44}
+.signal-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.75em;width:100%}
+.signal-card{
+  padding:.95em;
+  border:1px solid var(--line);
+  border-radius:.95em;
+  background:rgba(14,24,43,.9);
+}
+.signal-card b{display:block;margin-bottom:.28em;font-size:1.02em}
+.signal-card p{margin:0;color:var(--muted);font-size:.9em;line-height:1.5}
+.rail-flow{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:.72em;
+  width:100%;
+}
+.rail{
+  padding:1em .8em;
+  border:1px solid var(--line);
+  border-radius:.9em;
+  text-align:center;
+  background:rgba(13,23,41,.94);
+}
+.rail b{display:block;font-size:1em}
+.rail small{display:block;margin-top:.35em;color:var(--muted);font-size:.82em}
+.state-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.72em;width:100%}
+.state{
+  padding:.95em;
+  border:1px solid var(--line);
+  border-radius:.95em;
+  background:rgba(14,24,43,.92);
+}
+.state b{display:flex;justify-content:space-between;align-items:center;margin-bottom:.35em;font-size:1em}
+.swatch{
+  width:.82em;
+  height:.82em;
+  border-radius:50%;
+  box-shadow:0 0 .45em currentColor;
+}
+.matrix{
+  display:grid;
+  grid-template-columns:1.2fr repeat(3,1fr);
+  gap:.65em;
+  width:100%;
+}
+.matrix .head-cell,.matrix .body-cell{
+  padding:.8em .78em;
+  border:1px solid var(--line);
+  border-radius:.85em;
+}
+.head-cell{
+  background:rgba(20,34,59,.95);
+  color:#dce7fb;
+  font-size:.88em;
+  font-weight:900;
+  text-align:center;
+}
+.body-cell{
+  background:rgba(13,22,39,.92);
+  color:var(--muted);
+  font-size:.88em;
+  line-height:1.5;
+}
+.risk-high{border-color:rgba(255,123,136,.42);box-shadow:0 0 0 1px rgba(255,123,136,.08) inset}
+.risk-mid{border-color:rgba(255,204,107,.42);box-shadow:0 0 0 1px rgba(255,204,107,.08) inset}
+.risk-low{border-color:rgba(113,223,176,.42);box-shadow:0 0 0 1px rgba(113,223,176,.08) inset}
+.pillars .pillar{
+  flex:1;
+  min-width:9em;
+  padding:1.05em .92em;
+  border:1px solid var(--line);
+  border-radius:1em;
+  background:rgba(15,25,44,.92);
+}
+.pillar b{display:block;margin-bottom:.35em;font-size:1.02em}
+.pillar p{margin:0;color:var(--muted);font-size:.9em;line-height:1.52}
+.term-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:.75em;
+  width:100%;
+}
+.term{
+  padding:1em;
+  border:1px solid var(--line);
+  border-radius:.95em;
+  background:rgba(14,24,43,.92);
+}
+.term b{display:block;margin-bottom:.28em;font-size:1.02em}
+.term p{margin:0;color:var(--muted);font-size:.9em;line-height:1.52}
+.controls{
+  position:absolute;
+  right:1.55em;
+  bottom:.58em;
+  z-index:20;
+  display:flex;
+  align-items:center;
+  gap:.42em;
+}
+.controls button{
+  width:1.92em;
+  height:1.92em;
+  padding:0;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:rgba(16,28,49,.9);
+  color:#c7d6ef;
+  cursor:pointer;
+}
+.controls button:disabled{opacity:.28;cursor:default}
+.counter{min-width:3.6em;text-align:center;color:var(--muted);font-size:.84em}
+.keys{
+  display:none;
+}
+kbd{
+  padding:.15em .4em;
+  border:1px solid var(--line);
+  border-radius:.3em;
+}
+@media print{
+  @page{size:16in 9in;margin:0}
+  html,body{
+    width:auto;
+    height:auto;
+    overflow:visible;
+    background:#fff;
+    print-color-adjust:exact;
+    -webkit-print-color-adjust:exact;
+  }
+  .deck{
+    position:static;
+    width:16in;
+    height:auto;
+    transform:none;
+    overflow:visible;
+    box-shadow:none;
+    font-size:10pt;
+  }
+  .controls,.keys{display:none !important}
+  .slide{
+    position:relative;
+    width:16in;
+    height:9in;
+    display:grid !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    transform:none !important;
+    break-after:page;
+    page-break-after:always;
+  }
+  .slide:last-of-type{
+    break-after:auto;
+    page-break-after:auto;
+  }
+}
+</style>
+</head>
+<body>
+<main class="deck" id="deck">
+
+<section class="slide active" data-title="표지" aria-hidden="false">
+  <header class="head">
+    <div>
+      <p class="eyebrow">TNP20</p>
+      <h1>TNP20<br><span class="accent">HW 이해</span></h1>
+      <p class="lead">MAX32560 기반의 통합형 보안 시스템 보드를 전원, 제어, 저장, 통신, 물리 보안 관점에서 검토한다.</p>
+    </div>
+    <span class="badge">18장</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <h3>발표 범위</h3>
+        <ul class="list">
+          <li>시스템 전체 구조와 부팅 흐름</li>
+          <li>MCU, Flash, Secure Box, NFC, UART/USB, LED, 전원, 백업 전원</li>
+          <li>기술 검토 관점의 핵심 리스크와 체크 포인트</li>
+        </ul>
+      </div>
+      <div class="explain-box"></div>
+    </div>
+    <div class="diagram">
+      <div class="flow-row">
+        <div class="node"><b>제어</b><small>MAX32560</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>보안</b><small>Secure Box · Tamper</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>통신</b><small>NFC · UART · USB</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="문서 범위와 검토 기준" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">01 · 검토 범위</p>
+      <h2>문서 범위와 검토 기준</h2>
+    </div>
+    <span class="badge">제어 · 전원 · 보안 · 인터페이스</span>
+  </header>
+  <div class="content stack">
+    <div class="scope-grid">
+      <div class="scope-card">
+        <span class="title">이번 발표에서 보는 범위</span>
+        <p>시스템 블록 구성, 부팅 흐름, 기능 블록별 역할, 상호의존성, 우선 리스크</p>
+      </div>
+      <div class="scope-card">
+        <span class="title">제어 관점</span>
+        <p>MAX32560 중심 구조, 클럭, 리셋, 부팅 시점, 외부 메모리 의존성</p>
+      </div>
+      <div class="scope-card">
+        <span class="title">전원/신뢰성 관점</span>
+        <p>5V/3.3V 생성, PWR_GOOD, 백업 전원 전환, 기동 시 안정성</p>
+      </div>
+      <div class="scope-card">
+        <span class="title">보안/인터페이스 관점</span>
+        <p>Tamper, Mesh, Secure Box, NFC RF 경로, UART/USB 배선 품질</p>
+      </div>
+    </div>
+    <div class="explain-box">이번 발표는 생산 릴리스 검토보다 기술 구조 검토에 초점을 둔다. 따라서 세부 치수보다 동작 조건, 블록 간 연결, 리스크 전파를 우선 확인한다.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="시스템 전체 블록도" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">02 · 시스템 개요</p>
+      <h2>시스템 전체 블록도</h2>
+    </div>
+    <span class="badge">중앙 제어 기반 구조</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>MAX32560은 제어 중심으로서 전원, 통신, 저장, 표시 블록을 묶는다.</li>
+          <li>Flash는 코드와 설정 데이터를 저장하며 부팅 초기 단계와 연결된다.</li>
+          <li>NFC, UART, USB는 외부와 연결되는 통신 경로다.</li>
+          <li>LED와 백업 전원은 상태 가시성과 지속 동작을 담당한다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">이 블록도는 각 기능을 개별적으로 보기 전에 시스템 중심축이 무엇인지 먼저 정리해 준다. 이후 슬라이드는 이 구조를 기준으로 세부 블록을 해석하면 된다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="block-map">
+          <div class="block-col">
+            <div class="node"><b>Flash</b><small>QSPI 저장</small></div>
+            <div class="node"><b>Secure Box</b><small>Tamper 감시</small></div>
+            <div class="node"><b>백업 전원</b><small>전원 상실 유지</small></div>
+          </div>
+          <div class="center-node"><b>MAX32560</b><small>제어 중심 · 부팅 시퀀스 · 신호 연결 허브</small></div>
+          <div class="block-col">
+            <div class="node"><b>NFC</b><small>PN5180 · RF 경로</small></div>
+            <div class="node"><b>UART / USB</b><small>디버그 · 외부 호스트</small></div>
+            <div class="node"><b>LED</b><small>상태 표시</small></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="전원 유입부터 기능 활성화까지" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">03 · 부팅 시퀀스</p>
+      <h2>전원 유입부터 기능 활성화까지</h2>
+    </div>
+    <span class="badge">VDD_EXT → 전원 → MCU → Flash → 기능 블록</span>
+  </header>
+  <div class="content stack">
+    <div class="card">
+      <p class="lead">이 보드의 핵심은 전원 품질이 곧 전체 동작의 출발점이라는 점이다. 전원 생성, 클럭/리셋 준비, MCU 부팅, Flash 접근, 기능 활성화가 연속적으로 이어진다.</p>
+    </div>
+    <div class="diagram">
+      <div class="timeline">
+        <div class="time-step"><span class="num">STEP 1</span><b>입력 전원 유입</b><small>VDD_EXT가 시스템 시작점이 된다.</small></div>
+        <div class="time-step"><span class="num">STEP 2</span><b>5V / 3.3V 생성</b><small>레일이 분리되어 각 블록에 공급된다.</small></div>
+        <div class="time-step"><span class="num">STEP 3</span><b>클럭 / 리셋 준비</b><small>부팅 기준 신호가 안정화되어야 한다.</small></div>
+        <div class="time-step"><span class="num">STEP 4</span><b>MCU 부팅</b><small>MAX32560이 초기 제어를 시작한다.</small></div>
+        <div class="time-step"><span class="num">STEP 5</span><b>Flash 로드 후 기능 활성화</b><small>통신과 표시 블록이 정상 상태로 전이된다.</small></div>
+      </div>
+    </div>
+    <div class="explain-box">앞 단계가 불안정하면 뒤 단계는 겉보기에는 살아 있어도 재현성 없는 실패를 만들 수 있다. 그래서 전원과 기준 신호를 먼저 확인하는 순서가 중요하다.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="핵심 제어부: MAX32560" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">04 · 제어 중심부</p>
+      <h2>핵심 제어부: MAX32560</h2>
+    </div>
+    <span class="badge">Clock · Reset · JTAG · VBAT</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>MAX32560은 보드 전체 동작을 묶는 중앙 제어부다.</li>
+          <li>12MHz 클럭은 일반 동작의 기준, 32.768kHz는 저전력 기준을 제공한다.</li>
+          <li>리셋 품질은 부팅 재현성과 직결된다.</li>
+          <li>JTAG / USB는 디버그와 초기 검증 경로로 연결된다.</li>
+          <li>VBAT 연계는 전원 상실 시 상태 유지 전략과 연결된다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">MCU 검토의 핵심은 성능 수치보다 정상 시작 조건이다. 클럭, 리셋, 전원 분리, 디버그 접근성은 모두 같은 조건 묶음으로 해석해야 한다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="signal-grid">
+          <div class="signal-card"><b>12MHz X-TAL</b><p>일반 동작의 기준 주파수. MCU 기동과 주요 처리 흐름의 타이밍 기준.</p></div>
+          <div class="signal-card"><b>32.768kHz X-TAL</b><p>저전력 모드와 장기 유지 상태에서 기준 역할.</p></div>
+          <div class="signal-card"><b>MCU_RSTN</b><p>불안정한 리셋은 간헐 부팅 실패와 디버깅 난이도를 높인다.</p></div>
+          <div class="signal-card"><b>JTAG / USB_DP / USB_DM</b><p>디버그, 펌웨어 확인, 초기 bring-up 경로에 연결된다.</p></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:1167/757">
+          <img src="./tnp20_hw-captures/tnp20-hw-p03-s01-mcu.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="외부 저장장치와 Secure 연동" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">05 · 저장과 보안</p>
+      <h2>외부 저장장치와 Secure 연동</h2>
+    </div>
+    <span class="badge">W25Q128JVPIM · QSPI</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>W25Q128JVPIM은 고속 외부 Flash로서 코드, 설정, 데이터를 저장한다.</li>
+          <li>QSPI 연결은 부팅 초기 접근성과 처리 속도를 동시에 요구한다.</li>
+          <li>Flash는 단순 저장장치가 아니라 Secure Box 정책과도 연동되는 구성요소다.</li>
+          <li>즉, 저장 구조와 보안 구조를 분리해서 보면 실제 동작 맥락을 놓치게 된다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">Flash 연동은 단순 저장 속도보다 부팅 경로에 얼마나 깊게 연결되어 있는지, 그리고 보안 영역과 어떤 관계를 갖는지가 더 중요한 해석 포인트다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="flow-row">
+          <div class="node"><b>MAX32560</b><small>QSPI 마스터</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>W25Q128JVPIM</b><small>코드 · 설정 · 데이터</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>Secure 정책</b><small>부팅/보안 연동</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:1176/471">
+          <img src="./tnp20_hw-captures/tnp20-hw-p04-s02-flash.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="물리 보안 구조" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">06 · 물리 보안</p>
+      <h2>물리 보안 구조</h2>
+    </div>
+    <span class="badge">Tamper · Mesh · Layer</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>Tamper Switch는 개봉과 구조 변경의 시작점을 감지한다.</li>
+          <li>Mesh Pattern은 절단과 우회 시도를 탐지하는 핵심 구조다.</li>
+          <li>다층 배치는 단순 점퍼 우회 난도를 높인다.</li>
+          <li>보안 설계의 목적은 단순 차폐가 아니라 침입 탐지와 차단이다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">물리 보안은 tamper 경로가 실제 감지 회로로 닫히는지, 우회 가능한 단순 경로가 남아 있지 않은지, 레이어 설명과 신호 쌍이 일치하는지를 중심으로 본다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="flow-row">
+          <div class="node"><b>Tamper S/W</b><small>개봉 감지</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>Mesh Pair</b><small>TAM3 / TAM5</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>Secure Box</b><small>탐지 후 차단</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:1095/700">
+          <img src="./tnp20_hw-captures/tnp20-hw-p05-s03-secure-box.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="NFC 통신 블록" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">07 · NFC 경로</p>
+      <h2>NFC 통신 블록</h2>
+    </div>
+    <span class="badge">PN5180 · Antenna · Matching</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>PN5180이 NFC 제어 칩이며, MCU와는 SPI로 연결된다.</li>
+          <li>안테나는 실제 통신 성능을 결정하는 최종 물리 요소다.</li>
+          <li>RF Matching은 칩과 안테나 사이의 효율과 손실을 조정한다.</li>
+          <li>EMC Filter는 잡음 억제와 규격 대응 측면에서 중요하다.</li>
+          <li>RF_PWR_ON은 동작 제어 신호이며 polarity 해석이 중요하다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">NFC 성능은 칩 단품보다 주변 패시브와 안테나 구조에 크게 좌우된다. 따라서 RF 경로를 한 줄의 체인으로 이해해야 실제 검토가 가능하다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="flow-row">
+          <div class="node"><b>MCU</b><small>SPI 제어</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>PN5180</b><small>RF 제어 칩</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>RF Matching</b><small>임피던스 조정</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>Antenna</b><small>성능 결정</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>EMC Filter</b><small>잡음 억제</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:753/321">
+          <img src="./tnp20_hw-captures/tnp20-hw-p06-s04-gpio-nfc.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="NFC 설계 검토 포인트" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">08 · NFC 검토</p>
+      <h2>NFC 설계 검토 포인트</h2>
+    </div>
+    <span class="badge">Polarity · Matching · EMC</span>
+  </header>
+  <div class="content stack">
+    <div class="grid2">
+      <div class="card">
+        <h3>RF_PWR_ON 해석</h3>
+        <p>원문에는 <span class="mono">LOW = RF POWER ON</span>, <span class="mono">HIGH = RF POWER OFF</span>라는 주의가 있다. bring-up 시 polarity를 반대로 이해하면 칩은 살아 있어도 RF 동작이 죽어 있을 수 있다.</p>
+      </div>
+      <div class="card">
+        <h3>안테나와 매칭의 상호 영향</h3>
+        <p>칩 설정만으로 성능을 판단하면 안 된다. 안테나 패턴, 매칭 부품값, 주변 접지 구조가 함께 결과를 만든다.</p>
+      </div>
+      <div class="card">
+        <h3>EMC 민감 구간</h3>
+        <p>RF 경로 주변 전원/디지털 노이즈가 들어오면 성능 편차가 커질 수 있다. GND 구조와 필터 배치 해석이 필요하다.</p>
+      </div>
+      <div class="card">
+        <h3>디버깅 우선순위</h3>
+        <p>제어 신호 확인 → 전원 상태 확인 → RF enable 상태 확인 → 매칭과 안테나 경로 확인 순서로 보는 것이 효율적이다.</p>
+      </div>
+    </div>
+    <div class="explain-box">이 장은 부품 목록을 외우기 위한 슬라이드가 아니라 검토 질문을 정리하기 위한 슬라이드다. 핵심은 칩 자체보다 RF chain 전체가 정상 조건을 만족하는지다.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="UART/USB 외부 인터페이스" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">09 · 외부 인터페이스</p>
+      <h2>UART/USB 외부 인터페이스</h2>
+    </div>
+    <span class="badge">Debug · Host Connection</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>UART0 / UART1은 디버그와 단순 통신 확인에 적합한 경로다.</li>
+          <li>USB_DP / USB_DM은 외부 호스트와 연결되는 차동 신호 경로다.</li>
+          <li>USB는 배선 품질과 차동 임피던스 해석이 중요하다.</li>
+          <li>ESD 보호는 외부 인터페이스 안정성에 직접 연결된다.</li>
+          <li>UART는 내부 확인용, USB는 외부 연결용이라는 역할 구분이 필요하다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">외부 인터페이스는 핀 이름보다 외부 리스크가 어떤 경로로 시스템 안으로 들어오는지를 보여주는 것이 중요하다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="flow-row">
+          <div class="node"><b>UART0 / UART1</b><small>디버그 · 내부 확인</small></div>
+          <div class="arrow">↔</div>
+          <div class="node"><b>MAX32560</b><small>통신 제어</small></div>
+          <div class="arrow">↔</div>
+          <div class="node"><b>USB_DP / USB_DM</b><small>외부 호스트 연결</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:1013/678">
+          <img src="./tnp20_hw-captures/tnp20-hw-p07-s05-uart-usb.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="LED 상태 표시 블록" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">10 · 상태 표시</p>
+      <h2>LED 상태 표시 블록</h2>
+    </div>
+    <span class="badge">LP5012 · RGB LED</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>LP5012가 다채널 LED 드라이버 역할을 수행한다.</li>
+          <li>RGB LED는 전원, 통신, 오류 상태를 직관적으로 표현한다.</li>
+          <li>PWM 기반 밝기 제어는 단순 on/off보다 더 많은 상태 표현을 가능하게 한다.</li>
+          <li>기술 검토 관점에서는 사용자 표시 수단이면서 동시에 진단 인터페이스다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">상태 표시 블록은 부가 기능처럼 보이지만 bring-up과 현장 진단에서 빠른 판단 근거가 되기 때문에 실제 운용 관점에서는 비중이 크다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="state-grid">
+          <div class="state"><b>전원 정상 <span class="swatch" style="color:#71dfb0;background:#71dfb0"></span></b><p>전원 레일과 초기화가 완료된 상태를 의미</p></div>
+          <div class="state"><b>통신 동작 <span class="swatch" style="color:#6aa8ff;background:#6aa8ff"></span></b><p>NFC 또는 외부 인터페이스 활성 구간 표시</p></div>
+          <div class="state"><b>대기 상태 <span class="swatch" style="color:#ffcc6b;background:#ffcc6b"></span></b><p>저전력 또는 대기 모드 표현에 적합</p></div>
+          <div class="state"><b>오류 상태 <span class="swatch" style="color:#ff7b88;background:#ff7b88"></span></b><p>기능 실패 또는 비정상 조건에 대한 즉시 피드백</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="메인 전원 생성부" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">11 · 메인 전원</p>
+      <h2>메인 전원 생성부</h2>
+    </div>
+    <span class="badge">VDD_EXT · 5V · 3.3V · PWR_GOOD</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>VDD_EXT가 시스템 입력 전원이다.</li>
+          <li>TPS61252DSG를 통해 5V 레일이 형성되고, 추가 전원 구조를 통해 3.3V가 공급된다.</li>
+          <li>PWR_GOOD은 레일이 정상 범위에 들어왔는지 알리는 기준 신호다.</li>
+          <li>레일 분리는 노이즈와 오동작을 줄이는 데 중요하다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">전원 구조는 수치보다 순서가 중요하다. 어느 레일이 먼저 살아야 하는지, 어떤 신호가 정상 상태를 증명하는지가 핵심 설명 축이다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="rail-flow">
+          <div class="rail"><b>VDD_EXT</b><small>외부 입력 전원</small></div>
+          <div class="rail"><b>TPS61252DSG</b><small>승압 / 전원 형성</small></div>
+          <div class="rail"><b>VDD_5V0</b><small>주요 구동 레일</small></div>
+          <div class="rail"><b>VDD_3V3</b><small>MCU / 로직 전원</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:994/682">
+          <img src="./tnp20_hw-captures/tnp20-hw-p09-s07-power.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="CR2032 백업 전원" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">12 · 백업 전원</p>
+      <h2>CR2032 백업 전원</h2>
+    </div>
+    <span class="badge">VBAT · PFO · RESET</span>
+  </header>
+  <div class="content split">
+    <div class="stack">
+      <div class="card">
+        <ul class="list">
+          <li>CR2032는 전원 상실 시 유지 동작을 위한 백업 에너지원이다.</li>
+          <li>TPS3619-33DGK가 전압 감시와 전환 조건 판단을 담당한다.</li>
+          <li>VBAT, PFO, RESET은 저전력 전환과 상태 보존 해석의 핵심 신호다.</li>
+          <li>유지 전류 가정과 온도 조건은 실제 유지 시간을 크게 바꾼다.</li>
+        </ul>
+      </div>
+      <div class="explain-box">백업 전원은 단순 연결 설명보다 계산 가정이 맞는지를 함께 검토해야 한다. 그래서 전류 가정과 유지 시간 해석이 같이 들어간다.</div>
+    </div>
+    <div class="stack">
+      <div class="diagram">
+        <div class="flow-row">
+          <div class="node"><b>CR2032</b><small>3V 백업 소스</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>TPS3619-33DGK</b><small>전압 감시 / 전환 제어</small></div>
+          <div class="arrow">→</div>
+          <div class="node"><b>VBAT / PFO / RESET</b><small>상태 유지와 초기화 연동</small></div>
+        </div>
+      </div>
+      <div class="capture-card">
+        <div class="capture-media" style="aspect-ratio:940/373">
+          <img src="./tnp20_hw-captures/tnp20-hw-p10-s08-backup-bat.png" alt="회로도 캡처" loading="lazy">
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="설계 규칙과 레이아웃 원칙" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">13 · 보드 규칙</p>
+      <h2>설계 규칙과 레이아웃 원칙</h2>
+    </div>
+    <span class="badge">표지 메모 → 검토 규칙</span>
+  </header>
+  <div class="content stack">
+    <div class="grid3">
+      <div class="card"><h3>배치 검토 우선</h3><p>원문 cover note에 따라 배치 검토 이후 진행한다는 전제가 있다. 즉, 부품 선택 이후에도 배치 타당성 검토가 남아 있다.</p></div>
+      <div class="card"><h3>BYPASS 배치</h3><p>용량이 작은 bypass capacitor를 IC 가까이에 두는 원칙은 노이즈와 순간 응답의 기본 규칙이다.</p></div>
+      <div class="card"><h3>전원과 내층 연결</h3><p>모든 전원은 처리 후 내층 연결이라는 메모는 레일 정리와 리턴 경로 설계를 의식한 지침으로 읽어야 한다.</p></div>
+      <div class="card"><h3>이름과 핀 표기</h3><p>BOARD COPPER, TP, CONNECTOR 등 명칭 기준을 통일해야 검토와 생산 문서 간 혼선을 줄일 수 있다.</p></div>
+      <div class="card"><h3>적층 기준</h3><p>무연 FR-4 / HAL / 4-LAYER / 1.2T / GREEN이라는 cover 정보는 제조 조건과 구조 가정을 제공한다.</p></div>
+      <div class="card"><h3>설명 가능한 규칙</h3><p>이 규칙들은 체크리스트가 아니라 왜 필요한지 설명 가능해야 실제 리뷰에서 의미가 있다.</p></div>
+    </div>
+    <div class="explain-box">표지 메모는 단순 참고사항이 아니라 후속 블록 설명 전반에 공통으로 적용되는 규칙이다. 이 장은 그 규칙을 한 번에 정리하는 역할을 한다.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="기능 블록 간 상호의존성" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">14 · 의존성 맵</p>
+      <h2>기능 블록 간 상호의존성</h2>
+    </div>
+    <span class="badge">One fault → Multi-block impact</span>
+  </header>
+  <div class="content stack">
+    <div class="diagram">
+      <div class="flow-row">
+        <div class="node"><b>전원 문제</b><small>5V / 3.3V 불안정</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>클럭 / 리셋 영향</b><small>MCU 부팅 흔들림</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>통신 / 표시 영향</b><small>NFC, USB, LED 오동작</small></div>
+      </div>
+      <div class="flow-row" style="margin-top:1em">
+        <div class="node"><b>보안 구조 문제</b><small>Tamper false detect / bypass</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>정책 차단</b><small>Secure 동작 영향</small></div>
+        <div class="arrow">→</div>
+        <div class="node"><b>시스템 동작 제한</b><small>기능 차단 또는 재기동</small></div>
+      </div>
+    </div>
+    <div class="grid3">
+      <div class="card"><h3>전원 → MCU</h3><p>기준 전원이 흔들리면 클럭과 리셋 조건이 흔들리고, 결국 부팅 재현성 저하로 이어진다.</p></div>
+      <div class="card"><h3>MCU → Flash / NFC / LED</h3><p>제어 중심이 불안정하면 주변 블록은 각각의 문제처럼 보여도 동일 원인을 공유할 수 있다.</p></div>
+      <div class="card"><h3>백업 전원 → Reset</h3><p>백업 전원 조건과 reset 연동 해석이 맞지 않으면 안전 전환 시 기대한 상태 보존이 깨질 수 있다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="기술 검토 시 우선 리스크" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">15 · 우선 리스크</p>
+      <h2>기술 검토 시 우선 리스크</h2>
+    </div>
+    <span class="badge">우선 검토 매트릭스</span>
+  </header>
+  <div class="content stack">
+    <div class="matrix">
+      <div class="head-cell">리스크 항목</div>
+      <div class="head-cell">영향도</div>
+      <div class="head-cell">초기 검증 용이성</div>
+      <div class="head-cell">우선 검토 이유</div>
+
+      <div class="body-cell risk-high"><b>전원 안정성</b></div>
+      <div class="body-cell risk-high">매우 큼</div>
+      <div class="body-cell risk-mid">중간</div>
+      <div class="body-cell risk-high">모든 블록의 공통 기반이며, 증상이 여러 곳으로 퍼진다.</div>
+
+      <div class="body-cell risk-high"><b>Tamper 신뢰성</b></div>
+      <div class="body-cell risk-high">매우 큼</div>
+      <div class="body-cell risk-low">낮음</div>
+      <div class="body-cell risk-high">정상 동작 차단 또는 보안 누락 모두 큰 문제를 만든다.</div>
+
+      <div class="body-cell risk-mid"><b>RF 튜닝 / 매칭</b></div>
+      <div class="body-cell risk-mid">큼</div>
+      <div class="body-cell risk-low">낮음</div>
+      <div class="body-cell risk-mid">칩 단독 검증으로는 성능 원인을 분리하기 어렵다.</div>
+
+      <div class="body-cell risk-mid"><b>USB 배선 / ESD</b></div>
+      <div class="body-cell risk-mid">큼</div>
+      <div class="body-cell risk-mid">중간</div>
+      <div class="body-cell risk-mid">현장 연결 문제와 디버그 장애를 동시에 만들 수 있다.</div>
+
+      <div class="body-cell risk-mid"><b>백업 전류 가정</b></div>
+      <div class="body-cell risk-mid">중간</div>
+      <div class="body-cell risk-low">낮음</div>
+      <div class="body-cell risk-mid">온도와 누설 조건이 바뀌면 수명 해석이 크게 달라진다.</div>
+    </div>
+    <div class="explain-box">리스크 정리는 단순 나열이 아니라 다음 리뷰에서 어떤 시트부터 캡처하고 무엇을 우선 측정할지 정하는 기준으로 사용해야 한다.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="핵심 정리" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">16 · 핵심 정리</p>
+      <h2>핵심 정리</h2>
+    </div>
+    <span class="badge">Five System Axes</span>
+  </header>
+  <div class="content stack">
+    <div class="pillars">
+      <div class="pillar"><b>제어</b><p>MAX32560이 부팅과 블록 연결의 중심이다.</p></div>
+      <div class="pillar"><b>저장 / 보안</b><p>Flash와 Secure Box는 부팅과 정책 적용을 함께 지배한다.</p></div>
+      <div class="pillar"><b>외부 통신</b><p>NFC, UART, USB는 각각 다른 리스크와 역할을 가진다.</p></div>
+      <div class="pillar"><b>상태 표시</b><p>LED는 사용자 표시이면서 현장 진단 도구다.</p></div>
+      <div class="pillar"><b>안정성</b><p>전원과 배터리 구조가 전체 재현성을 결정한다.</p></div>
+    </div>
+    <div class="card">
+      <p class="lead">TNP20 HW는 단일 기능 보드가 아니라, 보안과 기능 블록이 한 장의 PCB 위에서 상호의존적으로 동작하는 시스템 보드다. 따라서 검토도 블록별 확인을 넘어서 공통 기반과 전파 경로를 함께 봐야 한다.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="핵심 단어와 개념 정리" aria-hidden="true">
+  <header class="head">
+    <div>
+      <p class="eyebrow">17 · 용어 정리</p>
+      <h2>핵심 단어와 개념 정리</h2>
+    </div>
+    <span class="badge">검토 용어 기준</span>
+  </header>
+  <div class="content">
+    <div class="term-grid">
+      <div class="term"><b>MCU</b><p>주변 장치를 통합 제어하는 중심 프로세서. 이 보드에서는 MAX32560이 해당한다.</p></div>
+      <div class="term"><b>QSPI</b><p>고속 외부 Flash 연결에 사용하는 직렬 인터페이스. 부팅 경로의 성능과 안정성에 영향이 있다.</p></div>
+      <div class="term"><b>Tamper</b><p>물리 침입, 개봉, 절단 시도를 감지하는 구조 또는 신호 체계.</p></div>
+      <div class="term"><b>Secure Box</b><p>민감 회로나 보안 감지 구조를 보호하고 연동하는 개념적 보안 영역.</p></div>
+      <div class="term"><b>PWM</b><p>LED 밝기 제어처럼 연속적인 상태 표현을 가능하게 하는 펄스 폭 제어 방식.</p></div>
+      <div class="term"><b>PWR_GOOD</b><p>전원 레일이 정상 범위에 들어왔음을 알려주는 상태 신호.</p></div>
+      <div class="term"><b>PFO</b><p>전원 이상 또는 저전압 조건을 알려주는 모니터 출력 신호.</p></div>
+      <div class="term"><b>ESD</b><p>정전기 방전에 대한 보호 설계. 외부 인터페이스 안정성과 직접 연결된다.</p></div>
+      <div class="term"><b>RF</b><p>무선 주파수 경로. NFC 성능은 RF chain 전체가 결정한다.</p></div>
+      <div class="term"><b>EMC</b><p>전자파 간섭 억제와 적합성 관점. RF 경로와 주변 노이즈 관리에 중요하다.</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="keys"><kbd>←</kbd> <kbd>→</kbd> 이동 · <kbd>F</kbd> 전체화면</div>
+<nav class="controls">
+  <button id="prev" aria-label="이전">←</button>
+  <span class="counter" id="slide-counter">1 / 18</span>
+  <button id="next" aria-label="다음">→</button>
+</nav>
+
+</main>
+
+<script>
+(function(){
+  var deck=document.getElementById("deck");
+  var slides=[].slice.call(document.querySelectorAll(".slide"));
+  var prev=document.getElementById("prev");
+  var next=document.getElementById("next");
+  var counter=document.getElementById("slide-counter");
+  var current=0;
+  function render(index,hash){
+    current=Math.max(0,Math.min(slides.length-1,index));
+    slides.forEach(function(slide,i){
+      var active=i===current;
+      slide.classList.toggle("active",active);
+      slide.setAttribute("aria-hidden",String(!active));
+    });
+    counter.textContent=(current+1)+" / "+slides.length;
+    prev.disabled=current===0;
+    next.disabled=current===slides.length-1;
+    document.title=slides[current].dataset.title+" | TNP20 HW 기술 검토";
+    if(hash!==false) history.replaceState(null,"","#"+(current+1));
+  }
+  function move(delta){render(current+delta);}
+  prev.onclick=function(){move(-1);};
+  next.onclick=function(){move(1);};
+  document.addEventListener("keydown",function(e){
+    if(["ArrowRight","PageDown"," "].indexOf(e.key)>=0){e.preventDefault();move(1);}
+    else if(["ArrowLeft","PageUp"].indexOf(e.key)>=0){e.preventDefault();move(-1);}
+    else if(e.key==="Home"){render(0);}
+    else if(e.key==="End"){render(slides.length-1);}
+    else if(e.key.toLowerCase()==="f"){
+      if(!document.fullscreenElement && deck.requestFullscreen) deck.requestFullscreen();
+      else if(document.exitFullscreen) document.exitFullscreen();
+    }
+  });
+  window.addEventListener("hashchange",function(){
+    var n=Number(location.hash.slice(1))-1;
+    if(Number.isInteger(n)) render(n,false);
+  });
+  var initial=Number(location.hash.slice(1))-1;
+  render(Number.isInteger(initial)?initial:0,false);
+})();
+</script>
+</body>
+</html>
