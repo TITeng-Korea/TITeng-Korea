@@ -851,7 +851,7 @@ PIN Block: 04 12 71 98 76 FE DC BA  ← XOR 결과, 3DES/AES로 암호화 전송
                     <div><code class="font-bold text-emerald-600 dark:text-emerald-400">Zeroization</code> — 탬퍼 감지 시 보안 메모리 데이터를 0으로 즉시 덮어쓰는 소거 기법</div>
                 </div>
             </div>
-            <a href="https://canva.link/7p9wi0t2xwuxq88" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
+            <a href="./kernel/pcipts.html" target="_blank" rel="noopener noreferrer" class="mt-8 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-3 text-sm font-black text-white transition hover:bg-primary-700">
                 <span>슬라이드 열기</span>
                 <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
             </a>
